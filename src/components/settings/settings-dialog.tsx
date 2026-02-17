@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -21,14 +20,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useSettingsStore } from "@/store/settings-store";
-import {
-    OPENAI_MODELS,
-    GOOGLE_MODELS,
-    GROQ_MODELS,
-    VERCEL_MODELS,
-    PROVIDER_OPTIONS,
-} from "@/lib/constants";
-import { Sun, Moon, Key, Cpu, SlidersHorizontal } from "lucide-react";
+import { MODELS } from "@/lib/constants";
+import { Sun, Moon, Cpu, SlidersHorizontal } from "lucide-react";
 
 interface SettingsDialogProps {
     open: boolean;
@@ -38,26 +31,13 @@ interface SettingsDialogProps {
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     const { theme, setTheme } = useTheme();
     const {
-        apiKey,
-        provider,
         model,
         temperature,
         systemPrompt,
-        setApiKey,
-        setProvider,
         setModel,
         setTemperature,
         setSystemPrompt,
     } = useSettingsStore();
-
-    const models =
-        provider === "openai"
-            ? OPENAI_MODELS
-            : provider === "google"
-                ? GOOGLE_MODELS
-                : provider === "vercel"
-                    ? VERCEL_MODELS
-                    : GROQ_MODELS;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -70,14 +50,10 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 </DialogHeader>
 
                 <Tabs defaultValue="general" className="mt-2">
-                    <TabsList className="grid w-full grid-cols-3 bg-secondary/50">
+                    <TabsList className="grid w-full grid-cols-2 bg-secondary/50">
                         <TabsTrigger value="general" className="text-xs gap-1.5">
                             <Sun className="h-3.5 w-3.5" />
                             General
-                        </TabsTrigger>
-                        <TabsTrigger value="api" className="text-xs gap-1.5">
-                            <Key className="h-3.5 w-3.5" />
-                            API
                         </TabsTrigger>
                         <TabsTrigger value="advanced" className="text-xs gap-1.5">
                             <Cpu className="h-3.5 w-3.5" />
@@ -103,75 +79,24 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                                 <Moon className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
                         </div>
-                    </TabsContent>
-
-                    {/* API Tab */}
-                    <TabsContent value="api" className="space-y-5 mt-4">
-                        <div className="space-y-2">
-                            <Label className="text-sm font-medium">Provider</Label>
-                            <Select
-                                value={provider}
-                                onValueChange={(v) => setProvider(v as "openai" | "google" | "groq" | "vercel")}
-                            >
-                                <SelectTrigger className="bg-secondary/30">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {PROVIDER_OPTIONS.map((p) => (
-                                        <SelectItem key={p.id} value={p.id}>
-                                            {p.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {provider === "groq" ? (
-                            <div className="space-y-2">
-                                <Label className="text-sm font-medium">API Key</Label>
-                                <div className="bg-primary/10 border border-primary/20 rounded-md p-3">
-                                    <p className="text-xs text-muted-foreground flex items-center gap-2">
-                                        <Key className="h-3.5 w-3.5" />
-                                        Groq is pre-configured. No API key needed!
-                                    </p>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="space-y-2">
-                                <Label className="text-sm font-medium">API Key</Label>
-                                <Input
-                                    type="password"
-                                    value={apiKey}
-                                    onChange={(e) => setApiKey(e.target.value)}
-                                    placeholder={
-                                        provider === "openai"
-                                            ? "sk-..."
-                                            : provider === "google"
-                                                ? "AIza..."
-                                                : "vck_..."
-                                    }
-                                    className="bg-secondary/30 font-mono text-xs"
-                                />
-                                <p className="text-[11px] text-muted-foreground">
-                                    Your key is stored locally in your browser and never sent to our servers.
-                                </p>
-                            </div>
-                        )}
 
                         <div className="space-y-2">
-                            <Label className="text-sm font-medium">Model</Label>
+                            <Label className="text-sm font-medium">AI Model</Label>
                             <Select value={model} onValueChange={setModel}>
                                 <SelectTrigger className="bg-secondary/30">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {models.map((m) => (
+                                    {MODELS.map((m) => (
                                         <SelectItem key={m.id} value={m.id}>
                                             {m.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
+                            <p className="text-[11px] text-muted-foreground">
+                                Powered by Groq - Ultra-fast AI inference
+                            </p>
                         </div>
                     </TabsContent>
 

@@ -36,8 +36,7 @@ export default function Home() {
     updateChatMessages,
     setActiveChat,
   } = useChatStore();
-  const { apiKey, provider, model, temperature, systemPrompt } =
-    useSettingsStore();
+  const { model, temperature, systemPrompt } = useSettingsStore();
 
   const activeChat = chats.find((c) => c.id === activeChatId);
 
@@ -47,8 +46,6 @@ export default function Home() {
       transport: new DefaultChatTransport({
         api: "/api/chat",
         body: {
-          apiKey,
-          provider,
           model,
           temperature,
           systemPrompt,
@@ -61,7 +58,7 @@ export default function Home() {
         // Messages synced via the effect below
       },
     });
-  }, [apiKey, provider, model, temperature, systemPrompt]);
+  }, [model, temperature, systemPrompt]);
 
   const { messages, setMessages, status, sendMessage, stop } =
     useChat({ chat: chatInstance });
@@ -129,16 +126,6 @@ export default function Home() {
   const handleSubmit = useCallback(() => {
     if (!inputValue.trim()) return;
 
-    if (!apiKey) {
-      toast.error("Please add your API key in Settings first.", {
-        action: {
-          label: "Open Settings",
-          onClick: () => setSettingsOpen(true),
-        },
-      });
-      return;
-    }
-
     // Create a new chat if none active
     let chatId = activeChatId;
     if (!chatId) {
@@ -148,7 +135,7 @@ export default function Home() {
 
     sendMessage({ text: inputValue.trim() });
     setInputValue("");
-  }, [inputValue, apiKey, activeChatId, createChat, setActiveChat, sendMessage]);
+  }, [inputValue, activeChatId, createChat, setActiveChat, sendMessage]);
 
   if (!mounted) {
     return (

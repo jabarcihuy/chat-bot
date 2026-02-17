@@ -1,51 +1,26 @@
 import { streamText, convertToModelMessages, type UIMessage } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createGroq } from "@ai-sdk/groq";
-import { createGateway } from "@ai-sdk/gateway";
 
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
     try {
-        const { messages, apiKey, provider, model, temperature, systemPrompt } =
+        const { messages, model, temperature, systemPrompt } =
             await req.json();
 
-        let aiModel;
-
-        if (provider === "groq") {
-            // Use server-side API key for Groq
-            const serverApiKey = process.env.GROQ_API_KEY;
-            if (!serverApiKey) {
-                return new Response(
-                    JSON.stringify({
-                        error: "Server configuration error: Groq API key not configured. Please contact administrator."
-                    }),
-                    { status: 500, headers: { "Content-Type": "application/json" } }
-                );
-            }
-            const groq = createGroq({ apiKey: serverApiKey });
-            aiModel = groq(model || "llama-3.3-70b-versatile");
-        } else {
-            // For other providers, require user-provided API key
-            if (!apiKey) {
-                return new Response(
-                    JSON.stringify({ error: "API key is required. Please add one in Settings." }),
-                    { status: 401, headers: { "Content-Type": "application/json" } }
-                );
-            }
-
-            if (provider === "google") {
-                const google = createGoogleGenerativeAI({ apiKey });
-                aiModel = google(model || "gemini-2.0-flash");
-            } else if (provider === "vercel") {
-                const gateway = createGateway({ apiKey });
-                aiModel = gateway(model || "openai/gpt-4o-mini");
-            } else {
-                const openai = createOpenAI({ apiKey });
-                aiModel = openai(model || "gpt-4o-mini");
-            }
+        // Use server-side Groq API key
+        const serverApiKey = process.env.GROQ_API_KEY;
+        if (!serverApiKey) {
+            return new Response(
+                JSON.stringify({
+                    error: "Server configuration error: Groq API key not configured. Please contact administrator."
+                }),
+                { status: 500, headers: { "Content-Type": "application/json" } }
+            );
         }
+
+        const groq = createGroq({ apiKey: serverApiKey });
+        const aiModel = groq(model || "llama-3.3-70b-versatile");
 
         // Convert UIMessages to model messages
         const modelMessages = await convertToModelMessages(

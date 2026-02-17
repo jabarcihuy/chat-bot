@@ -14,8 +14,6 @@ export interface Chat {
 }
 
 export interface Settings {
-    apiKey: string;
-    provider: "openai" | "google";
     model: string;
     temperature: number;
     systemPrompt: string;
