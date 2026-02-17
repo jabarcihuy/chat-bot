@@ -126,27 +126,37 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                             </Select>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-sm font-medium">API Key</Label>
-                            <Input
-                                type="password"
-                                value={apiKey}
-                                onChange={(e) => setApiKey(e.target.value)}
-                                placeholder={
-                                    provider === "openai"
-                                        ? "sk-..."
-                                        : provider === "google"
-                                            ? "AIza..."
-                                            : provider === "vercel"
-                                                ? "vck_..."
-                                                : "gsk_..."
-                                }
-                                className="bg-secondary/30 font-mono text-xs"
-                            />
-                            <p className="text-[11px] text-muted-foreground">
-                                Your key is stored locally in your browser and never sent to our servers.
-                            </p>
-                        </div>
+                        {provider === "groq" ? (
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium">API Key</Label>
+                                <div className="bg-primary/10 border border-primary/20 rounded-md p-3">
+                                    <p className="text-xs text-muted-foreground flex items-center gap-2">
+                                        <Key className="h-3.5 w-3.5" />
+                                        Groq is pre-configured. No API key needed!
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium">API Key</Label>
+                                <Input
+                                    type="password"
+                                    value={apiKey}
+                                    onChange={(e) => setApiKey(e.target.value)}
+                                    placeholder={
+                                        provider === "openai"
+                                            ? "sk-..."
+                                            : provider === "google"
+                                                ? "AIza..."
+                                                : "vck_..."
+                                    }
+                                    className="bg-secondary/30 font-mono text-xs"
+                                />
+                                <p className="text-[11px] text-muted-foreground">
+                                    Your key is stored locally in your browser and never sent to our servers.
+                                </p>
+                            </div>
+                        )}
 
                         <div className="space-y-2">
                             <Label className="text-sm font-medium">Model</Label>

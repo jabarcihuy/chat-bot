@@ -11,27 +11,40 @@ export async function POST(req: Request) {
         const { messages, apiKey, provider, model, temperature, systemPrompt } =
             await req.json();
 
-        if (!apiKey) {
-            return new Response(
-                JSON.stringify({ error: "API key is required. Please add one in Settings." }),
-                { status: 401, headers: { "Content-Type": "application/json" } }
-            );
-        }
-
         let aiModel;
 
-        if (provider === "google") {
-            const google = createGoogleGenerativeAI({ apiKey });
-            aiModel = google(model || "gemini-2.0-flash");
-        } else if (provider === "groq") {
-            const groq = createGroq({ apiKey });
+        if (provider === "groq") {
+            // Use server-side API key for Groq
+            const serverApiKey = process.env.GROQ_API_KEY;
+            if (!serverApiKey) {
+                return new Response(
+                    JSON.stringify({
+                        error: "Server configuration error: Groq API key not configured. Please contact administrator."
+                    }),
+                    { status: 500, headers: { "Content-Type": "application/json" } }
+                );
+            }
+            const groq = createGroq({ apiKey: serverApiKey });
             aiModel = groq(model || "llama-3.3-70b-versatile");
-        } else if (provider === "vercel") {
-            const gateway = createGateway({ apiKey });
-            aiModel = gateway(model || "openai/gpt-4o-mini");
         } else {
-            const openai = createOpenAI({ apiKey });
-            aiModel = openai(model || "gpt-4o-mini");
+            // For other providers, require user-provided API key
+            if (!apiKey) {
+                return new Response(
+                    JSON.stringify({ error: "API key is required. Please add one in Settings." }),
+                    { status: 401, headers: { "Content-Type": "application/json" } }
+                );
+            }
+
+            if (provider === "google") {
+                const google = createGoogleGenerativeAI({ apiKey });
+                aiModel = google(model || "gemini-2.0-flash");
+            } else if (provider === "vercel") {
+                const gateway = createGateway({ apiKey });
+                aiModel = gateway(model || "openai/gpt-4o-mini");
+            } else {
+                const openai = createOpenAI({ apiKey });
+                aiModel = openai(model || "gpt-4o-mini");
+            }
         }
 
         // Convert UIMessages to model messages
