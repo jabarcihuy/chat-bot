@@ -12,7 +12,7 @@ interface HeaderProps {
 
 export function Header({ onOpenSettings }: HeaderProps) {
     const { sidebarOpen, toggleSidebar } = useChatStore();
-    const { model, provider } = useSettingsStore();
+    const { model } = useSettingsStore();
 
     return (
         <motion.header
@@ -48,7 +48,7 @@ export function Header({ onOpenSettings }: HeaderProps) {
             <div className="flex items-center gap-2">
                 <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/50 text-xs text-muted-foreground">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="capitalize">{provider}</span>
+                    <span>Groq</span>
                     <span className="text-border">•</span>
                     <span>{model}</span>
                 </div>
