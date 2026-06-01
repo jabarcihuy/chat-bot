@@ -148,7 +148,7 @@ export default function Home() {
   }
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-background">
+    <div className="relative h-[100dvh] w-full overflow-hidden bg-background">
       <AnimatedBackground />
       
       <div className="relative z-10 flex h-full w-full overflow-hidden">

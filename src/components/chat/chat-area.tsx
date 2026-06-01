@@ -91,35 +91,10 @@ function WelcomeScreen({ onSuggestionClick, mode }: WelcomeScreenProps) {
     ];
 
     if (mode === "prd") {
-        const prdGuide = [
-            { 
-                id: "structure",
-                icon: <Rocket className="h-4 w-4 text-primary" />, 
-                title: "Struktur PRD", 
-                desc: "Ubah ide kasar Anda menjadi kerangka dokumen formal (Konteks, Masalah, Batasan)." 
-            },
-            { 
-                id: "stories",
-                icon: <MessageSquare className="h-4 w-4 text-accent" />, 
-                title: "User Stories", 
-                desc: "Jabarkan skenario pengguna secara spesifik (Sebagai... Saya ingin... Sehingga...)." 
-            },
-            { 
-                id: "tech",
-                icon: <Square className="h-4 w-4 text-foreground/60" />, 
-                title: "Tech Stack", 
-                desc: "Minta rekomendasi teknologi dan arsitektur yang paling pas untuk proyek Anda." 
-            },
-            { 
-                id: "metrics",
-                icon: <Plus className="h-4 w-4 text-foreground/60" />, 
-                title: "Metrik Sukses", 
-                desc: "Tentukan tolok ukur keberhasilan dan antisipasi berbagai edge cases." 
-            },
-        ] as const;
+        // ... (prdGuide definition)
 
         return (
-            <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
+            <div className="flex flex-col items-center justify-center min-h-[70dvh] px-4">
                 <motion.div
                     className="mb-8 text-center max-w-2xl"
                     initial={{ opacity: 0, y: 20 }}
@@ -185,7 +160,7 @@ function WelcomeScreen({ onSuggestionClick, mode }: WelcomeScreenProps) {
     }
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+        <div className="flex flex-col items-center justify-center min-h-[60dvh] text-center px-4">
             <motion.div
                 className="relative mb-6"
                 initial={{ scale: 0.8, opacity: 0 }}

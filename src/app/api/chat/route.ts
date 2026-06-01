@@ -3,6 +3,16 @@ import { google } from "@ai-sdk/google";
 
 export const maxDuration = 60;
 
+// Map legacy or imprecise model IDs to verified latest IDs from Google API
+const MODEL_MAPPING: Record<string, string> = {
+    "gemini-1.5-flash": "gemini-flash-latest",
+    "gemini-1.5-flash-latest": "gemini-flash-latest",
+    "gemini-1.5-pro": "gemini-pro-latest",
+    "gemini-1.5-pro-latest": "gemini-pro-latest",
+    "gemini-2.0-flash-exp": "gemini-2.0-flash",
+    "gemini-3-flash": "gemini-3-flash-preview",
+};
+
 export async function POST(req: Request) {
     try {
         const { messages, model, temperature, systemPrompt, mode, prdTask } =
@@ -19,7 +29,9 @@ export async function POST(req: Request) {
             );
         }
 
-        const aiModel = google(model || "gemini-3.5-flash");
+        // Get the effective model ID based on mapping or fallback
+        const modelId = MODEL_MAPPING[model] || model || "gemini-flash-latest";
+        const aiModel = google(modelId);
 
         let effectiveSystemPrompt = systemPrompt || "Anda adalah asisten yang membantu.";
         
@@ -38,7 +50,12 @@ export async function POST(req: Request) {
 
             const taskName = prdTask || "structure";
             effectiveSystemPrompt = `${taskPrompts[taskName]} 
-            Gunakan Bahasa Indonesia yang profesional. Tetap dukung semangat kreatif user yang memberikan ide ringkas/vibey.`;
+            
+            ATURAN PENTING:
+            1. DILARANG memberikan kata pengantar atau penutup (seperti "Tentu", "Ini hasil PRD-nya", dll).
+            2. Output HARUS berupa Markdown murni.
+            3. Langsung mulai dengan Heading (misal: # Judul Proyek).
+            4. Gunakan Bahasa Indonesia yang profesional.`;
         }
 
         // Convert UIMessages to model messages
@@ -51,7 +68,7 @@ export async function POST(req: Request) {
             system: effectiveSystemPrompt,
             messages: modelMessages,
             temperature: temperature ?? (mode === "prd" ? 0.3 : 0.7),
-            maxTokens: 4096, // Increase token limit to prevent cut-offs
+            maxTokens: 8192, // Set to maximum supported output limit
         });
 
         return result.toUIMessageStreamResponse();

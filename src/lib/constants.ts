@@ -1,5 +1,10 @@
 export const MODELS = [
-    { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash" },
+    { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash (Limit)" },
+    { id: "gemini-3-flash-preview", name: "Gemini 3 Flash (Tersedia)" },
+    { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash (Tersedia)" },
+    { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash" },
+    { id: "gemini-flash-latest", name: "Gemini 1.5 Flash (Sangat Stabil)" },
+    { id: "gemini-pro-latest", name: "Gemini 1.5 Pro" },
 ];
 
 export const DEFAULT_SYSTEM_PROMPT =
