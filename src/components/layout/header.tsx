@@ -56,42 +56,46 @@ export function Header({ onOpenSettings }: HeaderProps) {
 
             <div className="flex items-center gap-2">
                 {/* Mode Toggle Button */}
-                <div className="flex items-center bg-secondary/20 p-1 rounded-full border border-border/10">
+                <div className="flex items-center bg-muted/40 p-1 rounded-full border border-border/10 backdrop-blur-md">
                     <Button
-                        variant={mode === "chat" ? "secondary" : "ghost"}
+                        variant="ghost"
                         size="sm"
                         className={cn(
-                            "h-7 px-3 rounded-full text-[10px] gap-1.5 transition-all",
-                            mode === "chat" ? "shadow-sm bg-background" : "text-muted-foreground"
-                            )}
-                            onClick={() => setMode("chat")}
-                            >
-                            <MessageSquare className="h-3 w-3" />
-                            Obrolan
-                            </Button>
-                            <Button
-                            variant={mode === "prd" ? "secondary" : "ghost"}
-                            size="sm"
-                            className={cn(
-                            "h-7 px-3 rounded-full text-[10px] gap-1.5 transition-all",
-                            mode === "prd" ? "shadow-sm bg-background text-primary" : "text-muted-foreground"
-                            )}
-                            onClick={() => setMode("prd")}
-                            >
-                            <Rocket className="h-3 w-3" />
-                            PRD
-                            </Button>
-                            </div>
+                            "h-7 px-3 rounded-full text-[10px] font-bold gap-1.5 transition-all duration-200",
+                            mode === "chat" 
+                                ? "bg-primary text-primary-foreground shadow-md" 
+                                : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                        )}
+                        onClick={() => setMode("chat")}
+                    >
+                        <MessageSquare className="h-3 w-3" />
+                        Obrolan
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                            "h-7 px-3 rounded-full text-[10px] font-bold gap-1.5 transition-all duration-200",
+                            mode === "prd" 
+                                ? "bg-accent text-accent-foreground shadow-md" 
+                                : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                        )}
+                        onClick={() => setMode("prd")}
+                    >
+                        <Rocket className="h-3 w-3" />
+                        PRD
+                    </Button>
+                </div>
 
-                            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/30 backdrop-blur-md text-[11px] font-medium text-muted-foreground border border-border/20">
-                            <div className={cn(
-                            "w-1.5 h-1.5 rounded-full animate-pulse",
-                            mode === "prd" ? "bg-accent shadow-[0_0_8px_oklch(var(--accent))]" : "bg-primary shadow-[0_0_8px_oklch(var(--primary))]"
-                            )} />
-                            <span>{mode === "prd" ? "Mode PRD" : "Mode Obrolan"}</span>
-                            <span className="opacity-30">•</span>
-                            <span>{model}</span>
-                            </div>
+                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/10 backdrop-blur-md text-[10px] font-bold text-muted-foreground border border-border/10">
+                    <div className={cn(
+                        "w-1.5 h-1.5 rounded-full animate-pulse",
+                        mode === "prd" ? "bg-accent shadow-[0_0_8px_oklch(var(--accent))]" : "bg-primary shadow-[0_0_8px_oklch(var(--primary))]"
+                    )} />
+                    <span className="uppercase tracking-wider">{mode === "prd" ? "Mode PRD" : "Obrolan"}</span>
+                    <span className="opacity-20">|</span>
+                    <span className="font-mono opacity-80">{model}</span>
+                </div>
 
                             <div className="flex items-center gap-1 ml-2">
                             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>

@@ -36,7 +36,7 @@ export default function Home() {
     updateChatMessages,
     setActiveChat,
   } = useChatStore();
-  const { model, temperature, systemPrompt, mode } = useSettingsStore();
+  const { model, temperature, systemPrompt, mode, prdTask } = useSettingsStore();
 
   const activeChat = chats.find((c) => c.id === activeChatId);
 
@@ -50,6 +50,7 @@ export default function Home() {
           temperature,
           systemPrompt,
           mode,
+          prdTask,
         },
       }),
       onError: (error) => {

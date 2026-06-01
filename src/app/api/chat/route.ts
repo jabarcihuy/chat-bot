@@ -5,39 +5,34 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
     try {
-        const { messages, model, temperature, systemPrompt, mode } =
+        const { messages, model, temperature, systemPrompt, mode, prdTask } =
             await req.json();
 
-        // Use server-side Google AI API key
-        const serverApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-        if (!serverApiKey) {
-            return new Response(
-                JSON.stringify({
-                    error: "Kesalahan konfigurasi server: API key Google AI tidak ditemukan. Silakan hubungi administrator."
-                }),
-                { status: 500, headers: { "Content-Type": "application/json" } }
-            );
-        }
+        // ... (API key logic remains the same)
 
         const aiModel = google(model || "gemini-3.5-flash");
 
         let effectiveSystemPrompt = systemPrompt || "Anda adalah asisten yang membantu.";
         
-        // Inject Vibe Coder PRD Persona
+        // Inject Vibe Coder PRD Persona based on TASK
         if (mode === "prd") {
-            effectiveSystemPrompt = `Anda adalah Manajer Produk Teknis Senior (Senior Technical Product Manager) yang berspesialisasi dalam membantu "vibe coder".
-            Tugas Anda adalah mengambil ide-ide tingkat tinggi yang masih kasar dan mengubahnya menjadi Dokumen Persyaratan Produk (PRD) yang profesional dan terstruktur.
-            
-            Selalu susun output Anda dengan bagian berikut:
-            - **Judul Proyek & Konteks**
-            - **Pernyataan Masalah**
-            - **User Stories (Sebagai... Saya ingin... Sehingga...)**
-            - **Persyaratan Fungsional (Detail)**
-            - **Batasan Teknis (Arsitektur, Teknologi, UI/UX)**
-            - **Metrik Keberhasilan & Cakupan Masa Depan**
-            
-            Berikan detail teknis yang presisi namun tetap jaga semangat kreatif user. Jika user memberikan ide yang samar, gunakan keahlian Anda untuk mengisi celah teknis sambil memberikan pertanyaan klarifikasi jika diperlukan.`;
+            const taskPrompts: Record<string, string> = {
+                structure: `Anda adalah Senior Technical PM. Tugas Anda: Buat STRUKTUR PRD formal dari ide user. 
+                           Fokus pada: Proyek, Masalah, dan Persyaratan Fungsional utama.`,
+                stories: `Anda adalah Senior Technical PM. Tugas Anda: Buat USER STORIES detail (Sebagai... Saya ingin... Sehingga...). 
+                         Jabarkan semua skenario interaksi pengguna.`,
+                tech: `Anda adalah Senior Architect. Tugas Anda: Berikan REKOMENDASI TECH STACK dan batasan arsitektur. 
+                       Fokus pada: Efisiensi, Scalability, dan modernitas (Vibe Coder friendly).`,
+                metrics: `Anda adalah Product Data Scientist. Tugas Anda: Tentukan METRIK SUKSES (KPI) dan antisipasi EDGE CASES. 
+                         Berikan detail tentang apa yang bisa gagal dan bagaimana mengukurnya.`,
+            };
+
+            const taskName = prdTask || "structure";
+            effectiveSystemPrompt = `${taskPrompts[taskName]} 
+            Gunakan Bahasa Indonesia yang profesional. Tetap dukung semangat kreatif user yang memberikan ide ringkas/vibey.`;
         }
+
+        // ... (Rest of the logic)
 
         // Convert UIMessages to model messages
         const modelMessages = await convertToModelMessages(

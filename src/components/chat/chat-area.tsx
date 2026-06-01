@@ -7,6 +7,7 @@ import { ChatMessage } from "./chat-message";
 import { ThinkingIndicator } from "./thinking-indicator";
 import { useSettingsStore } from "@/store/settings-store";
 import { Rocket, MessageSquare, Square, Plus, Info } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { UIMessage } from "@ai-sdk/react";
 
 interface ChatAreaProps {
@@ -81,6 +82,8 @@ interface WelcomeScreenProps {
 }
 
 function WelcomeScreen({ onSuggestionClick, mode }: WelcomeScreenProps) {
+    const { prdTask, setPrdTask } = useSettingsStore();
+
     const suggestions = [
         { emoji: "💡", text: "Jelaskan tentang Quantum Computing" },
         { emoji: "📝", text: "Tulis komponen React untuk login" },
@@ -90,26 +93,30 @@ function WelcomeScreen({ onSuggestionClick, mode }: WelcomeScreenProps) {
     if (mode === "prd") {
         const prdGuide = [
             { 
+                id: "structure",
                 icon: <Rocket className="h-4 w-4 text-primary" />, 
                 title: "Struktur PRD", 
-                desc: "Ubah ide kasar Anda menjadi kerangka dokumen formal (Konteks, Batasan, dll)." 
+                desc: "Ubah ide kasar Anda menjadi kerangka dokumen formal (Konteks, Masalah, Batasan)." 
             },
             { 
+                id: "stories",
                 icon: <MessageSquare className="h-4 w-4 text-accent" />, 
                 title: "User Stories", 
                 desc: "Jabarkan skenario pengguna secara spesifik (Sebagai... Saya ingin... Sehingga...)." 
             },
             { 
+                id: "tech",
                 icon: <Square className="h-4 w-4 text-foreground/60" />, 
                 title: "Tech Stack", 
                 desc: "Minta rekomendasi teknologi dan arsitektur yang paling pas untuk proyek Anda." 
             },
             { 
+                id: "metrics",
                 icon: <Plus className="h-4 w-4 text-foreground/60" />, 
                 title: "Metrik Sukses", 
                 desc: "Tentukan tolok ukur keberhasilan dan antisipasi berbagai edge cases." 
             },
-        ];
+        ] as const;
 
         return (
             <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
@@ -124,22 +131,34 @@ function WelcomeScreen({ onSuggestionClick, mode }: WelcomeScreenProps) {
                     </div>
                     <h1 className="text-3xl font-black mb-3 tracking-tight">Vibe Coder Workspace</h1>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                        Selamat datang di ruang kerja khusus pembuatan dokumen produk. Di sini, Gemini bertindak sebagai 
-                        **Technical PM Senior** yang akan menyusun ide Anda menjadi dokumen teknis siap pakai.
+                        Pilih satu fokus tugas di bawah untuk mulai membangun dokumen Anda. 
+                        Gemini akan menyesuaikan keahliannya berdasarkan pilihan Anda.
                     </p>
                 </motion.div>
 
                 <div className="grid gap-4 sm:grid-cols-2 w-full max-w-3xl">
                     {prdGuide.map((item, i) => (
-                        <motion.div
-                            key={item.title}
-                            className="p-5 rounded-2xl bg-card border border-border/10 shadow-sm hover:shadow-md transition-all group"
+                        <motion.button
+                            key={item.id}
+                            className={cn(
+                                "p-5 rounded-2xl border transition-all text-left group",
+                                prdTask === item.id 
+                                    ? "bg-primary/5 border-primary shadow-lg shadow-primary/5" 
+                                    : "bg-card border-border/10 hover:border-primary/30"
+                            )}
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.1 + i * 0.05 }}
+                            onClick={() => {
+                                setPrdTask(item.id);
+                                document.querySelector('textarea')?.focus();
+                            }}
                         >
                             <div className="flex items-start gap-4">
-                                <div className="p-2.5 rounded-xl bg-secondary/50 group-hover:bg-secondary transition-colors shrink-0">
+                                <div className={cn(
+                                    "p-2.5 rounded-xl transition-colors shrink-0",
+                                    prdTask === item.id ? "bg-primary text-primary-foreground" : "bg-secondary/50 group-hover:bg-secondary"
+                                )}>
                                     {item.icon}
                                 </div>
                                 <div className="space-y-1">
@@ -149,7 +168,7 @@ function WelcomeScreen({ onSuggestionClick, mode }: WelcomeScreenProps) {
                                     </p>
                                 </div>
                             </div>
-                        </motion.div>
+                        </motion.button>
                     ))}
                 </div>
 
@@ -159,7 +178,7 @@ function WelcomeScreen({ onSuggestionClick, mode }: WelcomeScreenProps) {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.5 }}
                 >
-                    Tips: Ketik ide singkat di bawah, lalu klik salah satu tombol aksi cepat untuk mulai membangun.
+                    Target aktif: <span className="font-bold text-primary uppercase">{prdTask}</span>. Ketik ide Anda di bawah dan tekan Enter.
                 </motion.p>
             </div>
         );

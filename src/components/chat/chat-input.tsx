@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Send, Square, Mic, MicOff, Rocket, MessageSquare, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSettingsStore } from "@/store/settings-store";
+import { cn } from "@/lib/utils";
 
 interface ChatInputProps {
     value: string;
@@ -24,32 +25,20 @@ export function ChatInput({
     disabled,
 }: ChatInputProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const { mode } = useSettingsStore();
+    const { mode, prdTask } = useSettingsStore();
     const [isListening, setIsListening] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recognitionRef = useRef<any>(null);
 
-    const handleQuickAction = (action: string) => {
-        let prefix = "";
-        switch (action) {
-            case "structure":
-                prefix = "Buatkan struktur PRD untuk ide ini: ";
-                break;
-            case "stories":
-                prefix = "Definisikan user stories detail untuk: ";
-                break;
-            case "tech":
-                prefix = "Rekomendasikan tech stack modern dan batasan arsitektur untuk: ";
-                break;
-            case "metrics":
-                prefix = "Apa saja metrik keberhasilan kunci dan edge cases untuk: ";
-                break;
-        }
-        onChange(prefix + value);
-        textareaRef.current?.focus();
+    const prdTaskInfo = {
+        structure: { label: "Struktur PRD", icon: <Rocket className="h-3 w-3" />, color: "text-primary" },
+        stories: { label: "User Stories", icon: <MessageSquare className="h-3 w-3" />, color: "text-accent" },
+        tech: { label: "Tech Stack", icon: <Square className="h-3 w-3" />, color: "text-foreground" },
+        metrics: { label: "Metrik Sukses", icon: <Plus className="h-3 w-3" />, color: "text-foreground" },
     };
 
     // Auto-resize textarea
+    // ... rest of the logic remains same until return
     const adjustHeight = useCallback(() => {
         const el = textareaRef.current;
         if (!el) return;
@@ -124,50 +113,25 @@ export function ChatInput({
             transition={{ duration: 0.3, delay: 0.2 }}
         >
             <div className="max-w-5xl mx-auto">
-                <AnimatePresence>
+                <AnimatePresence mode="wait">
                     {mode === "prd" && (
                         <motion.div 
-                            initial={{ opacity: 0, y: 10 }}
+                            key={prdTask}
+                            initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            className="flex flex-wrap gap-2 mb-4"
+                            exit={{ opacity: 0, y: -5 }}
+                            className="flex items-center gap-2 mb-3"
                         >
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-8 px-4 text-[11px] rounded-full border-primary/20 hover:bg-primary/10 text-primary font-bold"
-                                onClick={() => handleQuickAction("structure")}
-                            >
-                                <Rocket className="h-3.5 w-3.5 mr-2" />
-                                Struktur PRD
-                            </Button>
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-8 px-4 text-[11px] rounded-full border-accent/20 hover:bg-accent/10 text-accent font-bold"
-                                onClick={() => handleQuickAction("stories")}
-                            >
-                                <MessageSquare className="h-3.5 w-3.5 mr-2" />
-                                User Stories
-                            </Button>
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-8 px-4 text-[11px] rounded-full border-foreground/10 hover:bg-foreground/5 font-bold"
-                                onClick={() => handleQuickAction("tech")}
-                            >
-                                <Square className="h-3.5 w-3.5 mr-2" />
-                                Tech Stack
-                            </Button>
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-8 px-4 text-[11px] rounded-full border-foreground/10 hover:bg-foreground/5 font-bold"
-                                onClick={() => handleQuickAction("metrics")}
-                            >
-                                <Plus className="h-3.5 w-3.5 mr-2" />
-                                Metrik Sukses
-                            </Button>
+                            <div className={cn(
+                                "flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/30 border border-border/10 text-[10px] font-bold uppercase tracking-wider",
+                                prdTaskInfo[prdTask].color
+                            )}>
+                                {prdTaskInfo[prdTask].icon}
+                                <span>Target Aktif: {prdTaskInfo[prdTask].label}</span>
+                            </div>
+                            <span className="text-[10px] text-muted-foreground opacity-50 italic">
+                                (Pilih target lain di layar utama jika ingin ganti)
+                            </span>
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -178,7 +142,7 @@ export function ChatInput({
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Ketik pesan Anda di sini..."
+                        placeholder={mode === "prd" ? `Tulis ide untuk ${prdTaskInfo[prdTask].label}...` : "Ketik pesan Anda di sini..."}
                         rows={1}
                         disabled={disabled}
                         className="flex-1 resize-none bg-transparent text-[15px] leading-relaxed px-2 py-1.5 outline-none placeholder:text-muted-foreground/30 disabled:opacity-50 max-h-[250px]"
