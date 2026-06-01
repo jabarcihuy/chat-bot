@@ -68,7 +68,7 @@ export async function POST(req: Request) {
             system: effectiveSystemPrompt,
             messages: modelMessages,
             temperature: temperature ?? (mode === "prd" ? 0.3 : 0.7),
-            maxCompletionTokens: 8192, // Updated to match newer SDK property name
+            maxOutputTokens: 8192, // Verified working property name
         });
 
         return result.toUIMessageStreamResponse();
