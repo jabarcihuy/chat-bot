@@ -8,7 +8,16 @@ export async function POST(req: Request) {
         const { messages, model, temperature, systemPrompt, mode, prdTask } =
             await req.json();
 
-        // ... (API key logic remains the same)
+        // Use server-side Google AI API key
+        const serverApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+        if (!serverApiKey) {
+            return new Response(
+                JSON.stringify({
+                    error: "Kesalahan konfigurasi server: API key Google AI tidak ditemukan. Silakan hubungi administrator."
+                }),
+                { status: 500, headers: { "Content-Type": "application/json" } }
+            );
+        }
 
         const aiModel = google(model || "gemini-3.5-flash");
 
@@ -32,8 +41,6 @@ export async function POST(req: Request) {
             Gunakan Bahasa Indonesia yang profesional. Tetap dukung semangat kreatif user yang memberikan ide ringkas/vibey.`;
         }
 
-        // ... (Rest of the logic)
-
         // Convert UIMessages to model messages
         const modelMessages = await convertToModelMessages(
             messages as UIMessage[]
@@ -43,13 +50,14 @@ export async function POST(req: Request) {
             model: aiModel,
             system: effectiveSystemPrompt,
             messages: modelMessages,
-            temperature: temperature ?? (mode === "prd" ? 0.3 : 0.7), // Lower temp for PRDs for consistency
+            temperature: temperature ?? (mode === "prd" ? 0.3 : 0.7),
+            maxTokens: 4096, // Increase token limit to prevent cut-offs
         });
 
         return result.toUIMessageStreamResponse();
     } catch (error: unknown) {
         const message =
-            error instanceof Error ? error.message : "An unexpected error occurred";
+            error instanceof Error ? error.message : "Terjadi kesalahan yang tidak terduga";
         return new Response(JSON.stringify({ error: message }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
