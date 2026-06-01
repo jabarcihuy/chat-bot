@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatMessage } from "./chat-message";
 import { ThinkingIndicator } from "./thinking-indicator";
+import { useSettingsStore } from "@/store/settings-store";
+import { Rocket, MessageSquare, Square, Plus, Info } from "lucide-react";
 import type { UIMessage } from "@ai-sdk/react";
 
 interface ChatAreaProps {
@@ -23,6 +25,7 @@ function getTextFromParts(parts: UIMessage["parts"]): string {
 
 export function ChatArea({ messages, isLoading, onSuggestionClick }: ChatAreaProps) {
     const bottomRef = useRef<HTMLDivElement>(null);
+    const { mode } = useSettingsStore();
 
     // Auto-scroll to bottom on new messages
     useEffect(() => {
@@ -30,30 +33,32 @@ export function ChatArea({ messages, isLoading, onSuggestionClick }: ChatAreaPro
     }, [messages, isLoading]);
 
     return (
-        <div className="flex-1 overflow-hidden">
-            <ScrollArea className="h-full">
-                <div className="max-w-3xl mx-auto py-4 space-y-1">
+        <div className="flex-1 overflow-hidden min-h-0">
+            <ScrollArea className="h-full w-full">
+                <div className="max-w-5xl mx-auto px-6 py-10 space-y-4">
                     {messages.length === 0 && !isLoading && (
-                        <WelcomeScreen onSuggestionClick={onSuggestionClick} />
+                        <WelcomeScreen onSuggestionClick={onSuggestionClick} mode={mode} />
                     )}
 
-                    <AnimatePresence mode="popLayout">
-                        {messages.map((msg, i) => {
-                            const content = getTextFromParts(msg.parts);
-                            return (
-                                <ChatMessage
-                                    key={msg.id || i}
-                                    role={msg.role as "user" | "assistant"}
-                                    content={content}
-                                    isStreaming={
-                                        isLoading &&
-                                        msg.role === "assistant" &&
-                                        i === messages.length - 1
-                                    }
-                                />
-                            );
-                        })}
-                    </AnimatePresence>
+                    <div className="flex flex-col gap-4">
+                        <AnimatePresence mode="popLayout">
+                            {messages.map((msg, i) => {
+                                const content = getTextFromParts(msg.parts);
+                                return (
+                                    <ChatMessage
+                                        key={msg.id || i}
+                                        role={msg.role as "user" | "assistant"}
+                                        content={content}
+                                        isStreaming={
+                                            isLoading &&
+                                            msg.role === "assistant" &&
+                                            i === messages.length - 1
+                                        }
+                                    />
+                                );
+                            })}
+                        </AnimatePresence>
+                    </div>
 
                     <AnimatePresence>
                         {isLoading &&
@@ -63,7 +68,7 @@ export function ChatArea({ messages, isLoading, onSuggestionClick }: ChatAreaPro
                             )}
                     </AnimatePresence>
 
-                    <div ref={bottomRef} />
+                    <div ref={bottomRef} className="h-4" />
                 </div>
             </ScrollArea>
         </div>
@@ -72,14 +77,93 @@ export function ChatArea({ messages, isLoading, onSuggestionClick }: ChatAreaPro
 
 interface WelcomeScreenProps {
     onSuggestionClick?: (text: string) => void;
+    mode?: "chat" | "prd";
 }
 
-function WelcomeScreen({ onSuggestionClick }: WelcomeScreenProps) {
+function WelcomeScreen({ onSuggestionClick, mode }: WelcomeScreenProps) {
     const suggestions = [
-        { emoji: "💡", text: "Explain quantum computing" },
-        { emoji: "📝", text: "Write a React component" },
-        { emoji: "🎯", text: "Debug my Python code" },
+        { emoji: "💡", text: "Jelaskan tentang Quantum Computing" },
+        { emoji: "📝", text: "Tulis komponen React untuk login" },
+        { emoji: "🎯", text: "Debug kode Python saya" },
     ];
+
+    if (mode === "prd") {
+        const prdGuide = [
+            { 
+                icon: <Rocket className="h-4 w-4 text-primary" />, 
+                title: "Struktur PRD", 
+                desc: "Ubah ide kasar Anda menjadi kerangka dokumen formal (Konteks, Batasan, dll)." 
+            },
+            { 
+                icon: <MessageSquare className="h-4 w-4 text-accent" />, 
+                title: "User Stories", 
+                desc: "Jabarkan skenario pengguna secara spesifik (Sebagai... Saya ingin... Sehingga...)." 
+            },
+            { 
+                icon: <Square className="h-4 w-4 text-foreground/60" />, 
+                title: "Tech Stack", 
+                desc: "Minta rekomendasi teknologi dan arsitektur yang paling pas untuk proyek Anda." 
+            },
+            { 
+                icon: <Plus className="h-4 w-4 text-foreground/60" />, 
+                title: "Metrik Sukses", 
+                desc: "Tentukan tolok ukur keberhasilan dan antisipasi berbagai edge cases." 
+            },
+        ];
+
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
+                <motion.div
+                    className="mb-8 text-center max-w-2xl"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                >
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 text-accent text-[10px] font-bold uppercase tracking-widest mb-4 border border-accent/20">
+                        <Info className="h-3 w-3" />
+                        Panduan Mode PRD
+                    </div>
+                    <h1 className="text-3xl font-black mb-3 tracking-tight">Vibe Coder Workspace</h1>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                        Selamat datang di ruang kerja khusus pembuatan dokumen produk. Di sini, Gemini bertindak sebagai 
+                        **Technical PM Senior** yang akan menyusun ide Anda menjadi dokumen teknis siap pakai.
+                    </p>
+                </motion.div>
+
+                <div className="grid gap-4 sm:grid-cols-2 w-full max-w-3xl">
+                    {prdGuide.map((item, i) => (
+                        <motion.div
+                            key={item.title}
+                            className="p-5 rounded-2xl bg-card border border-border/10 shadow-sm hover:shadow-md transition-all group"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.1 + i * 0.05 }}
+                        >
+                            <div className="flex items-start gap-4">
+                                <div className="p-2.5 rounded-xl bg-secondary/50 group-hover:bg-secondary transition-colors shrink-0">
+                                    {item.icon}
+                                </div>
+                                <div className="space-y-1">
+                                    <h3 className="text-sm font-bold">{item.title}</h3>
+                                    <p className="text-xs text-muted-foreground leading-normal">
+                                        {item.desc}
+                                    </p>
+                                </div>
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+
+                <motion.p 
+                    className="mt-10 text-[11px] text-muted-foreground/60 italic"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                >
+                    Tips: Ketik ide singkat di bawah, lalu klik salah satu tombol aksi cepat untuk mulai membangun.
+                </motion.p>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
@@ -111,7 +195,7 @@ function WelcomeScreen({ onSuggestionClick }: WelcomeScreenProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
             >
-                Welcome to Nexus AI
+                Selamat Datang di Nexus AI
             </motion.h1>
             <motion.p
                 className="text-sm text-muted-foreground max-w-md mb-8"
@@ -119,8 +203,8 @@ function WelcomeScreen({ onSuggestionClick }: WelcomeScreenProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25 }}
             >
-                Your intelligent assistant powered by the latest AI models. Start a
-                conversation below or configure your API key in Settings.
+                Asisten cerdas Anda yang ditenagai oleh model AI terbaru. Mulai percakapan 
+                di bawah atau beralih ke mode PRD untuk menyusun dokumen produk.
             </motion.p>
 
             <div className="grid gap-3 sm:grid-cols-3 max-w-lg w-full">

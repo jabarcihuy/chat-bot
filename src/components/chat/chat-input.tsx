@@ -2,8 +2,9 @@
 
 import { useRef, useEffect, useCallback, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Square, Mic, MicOff } from "lucide-react";
+import { Send, Square, Mic, MicOff, Rocket, MessageSquare, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useSettingsStore } from "@/store/settings-store";
 
 interface ChatInputProps {
     value: string;
@@ -23,16 +24,37 @@ export function ChatInput({
     disabled,
 }: ChatInputProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const { mode } = useSettingsStore();
     const [isListening, setIsListening] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recognitionRef = useRef<any>(null);
+
+    const handleQuickAction = (action: string) => {
+        let prefix = "";
+        switch (action) {
+            case "structure":
+                prefix = "Buatkan struktur PRD untuk ide ini: ";
+                break;
+            case "stories":
+                prefix = "Definisikan user stories detail untuk: ";
+                break;
+            case "tech":
+                prefix = "Rekomendasikan tech stack modern dan batasan arsitektur untuk: ";
+                break;
+            case "metrics":
+                prefix = "Apa saja metrik keberhasilan kunci dan edge cases untuk: ";
+                break;
+        }
+        onChange(prefix + value);
+        textareaRef.current?.focus();
+    };
 
     // Auto-resize textarea
     const adjustHeight = useCallback(() => {
         const el = textareaRef.current;
         if (!el) return;
         el.style.height = "auto";
-        el.style.height = Math.min(el.scrollHeight, 200) + "px";
+        el.style.height = Math.min(el.scrollHeight, 250) + "px";
     }, []);
 
     useEffect(() => {
@@ -71,7 +93,7 @@ export function ChatInput({
 
         recognition.continuous = true;
         recognition.interimResults = true;
-        recognition.lang = "en-US";
+        recognition.lang = "id-ID";
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         recognition.onresult = (event: any) => {
@@ -96,31 +118,79 @@ export function ChatInput({
 
     return (
         <motion.div
-            className="glass border-t border-border/50 p-3 sm:p-4"
+            className="border-t border-border/10 bg-background p-4 sm:p-8"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.2 }}
         >
-            <div className="max-w-3xl mx-auto">
-                <div className="relative flex items-end gap-2 rounded-2xl bg-secondary/40 border border-border/50 p-2 transition-colors focus-within:border-primary/30 focus-within:bg-secondary/60">
+            <div className="max-w-5xl mx-auto">
+                <AnimatePresence>
+                    {mode === "prd" && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            className="flex flex-wrap gap-2 mb-4"
+                        >
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 px-4 text-[11px] rounded-full border-primary/20 hover:bg-primary/10 text-primary font-bold"
+                                onClick={() => handleQuickAction("structure")}
+                            >
+                                <Rocket className="h-3.5 w-3.5 mr-2" />
+                                Struktur PRD
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 px-4 text-[11px] rounded-full border-accent/20 hover:bg-accent/10 text-accent font-bold"
+                                onClick={() => handleQuickAction("stories")}
+                            >
+                                <MessageSquare className="h-3.5 w-3.5 mr-2" />
+                                User Stories
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 px-4 text-[11px] rounded-full border-foreground/10 hover:bg-foreground/5 font-bold"
+                                onClick={() => handleQuickAction("tech")}
+                            >
+                                <Square className="h-3.5 w-3.5 mr-2" />
+                                Tech Stack
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 px-4 text-[11px] rounded-full border-foreground/10 hover:bg-foreground/5 font-bold"
+                                onClick={() => handleQuickAction("metrics")}
+                            >
+                                <Plus className="h-3.5 w-3.5 mr-2" />
+                                Metrik Sukses
+                            </Button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <div className="relative flex items-end gap-2 rounded-2xl bg-card border border-border/20 p-3 shadow-lg focus-within:border-primary/40 focus-within:ring-4 focus-within:ring-primary/5 transition-all">
                     <textarea
                         ref={textareaRef}
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Send a message..."
+                        placeholder="Ketik pesan Anda di sini..."
                         rows={1}
                         disabled={disabled}
-                        className="flex-1 resize-none bg-transparent text-sm leading-relaxed px-2 py-1.5 outline-none placeholder:text-muted-foreground/50 disabled:opacity-50 max-h-[200px]"
+                        className="flex-1 resize-none bg-transparent text-[15px] leading-relaxed px-2 py-1.5 outline-none placeholder:text-muted-foreground/30 disabled:opacity-50 max-h-[250px]"
                     />
 
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0 pb-1">
                         {/* Voice button */}
                         <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-9 w-9 rounded-full"
                                 onClick={toggleVoice}
                                 type="button"
                             >
@@ -141,7 +211,7 @@ export function ChatInput({
                                             animate={{ scale: 1 }}
                                             exit={{ scale: 0 }}
                                         >
-                                            <Mic className="h-4 w-4 text-muted-foreground" />
+                                            <Mic className="h-4 w-4 text-muted-foreground/60" />
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
@@ -161,10 +231,10 @@ export function ChatInput({
                                     <Button
                                         variant="destructive"
                                         size="icon"
-                                        className="h-8 w-8 rounded-xl"
+                                        className="h-9 w-9 rounded-full"
                                         onClick={onStop}
                                     >
-                                        <Square className="h-3.5 w-3.5" />
+                                        <Square className="h-4 w-4" />
                                     </Button>
                                 </motion.div>
                             ) : (
@@ -177,11 +247,11 @@ export function ChatInput({
                                 >
                                     <Button
                                         size="icon"
-                                        className="h-8 w-8 rounded-xl"
+                                        className="h-9 w-9 rounded-full bg-primary hover:bg-primary/90 shadow-md shadow-primary/20"
                                         onClick={onSubmit}
                                         disabled={!value.trim() || disabled}
                                     >
-                                        <Send className="h-3.5 w-3.5" />
+                                        <Send className="h-4 w-4" />
                                     </Button>
                                 </motion.div>
                             )}
@@ -189,7 +259,7 @@ export function ChatInput({
                     </div>
                 </div>
                 <p className="text-[10px] text-muted-foreground/40 text-center mt-2">
-                    Nexus AI can make mistakes. Verify important information.
+                    Nexus AI dapat membuat kesalahan. Verifikasi informasi penting.
                 </p>
             </div>
         </motion.div>

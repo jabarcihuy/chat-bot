@@ -32,11 +32,11 @@ export function groupChatsByDate(chats: Chat[]): Record<DateGroup, Chat[]> {
     const last30 = new Date(today.getTime() - 30 * 86400000);
 
     const groups: Record<DateGroup, Chat[]> = {
-        Today: [],
-        Yesterday: [],
-        "Last 7 Days": [],
-        "Last 30 Days": [],
-        Older: [],
+        "Hari Ini": [],
+        "Kemarin": [],
+        "7 Hari Terakhir": [],
+        "30 Hari Terakhir": [],
+        "Lama": [],
     };
 
     const sorted = [...chats].sort(
@@ -45,11 +45,11 @@ export function groupChatsByDate(chats: Chat[]): Record<DateGroup, Chat[]> {
 
     for (const chat of sorted) {
         const d = new Date(chat.updatedAt);
-        if (d >= today) groups["Today"].push(chat);
-        else if (d >= yesterday) groups["Yesterday"].push(chat);
-        else if (d >= last7) groups["Last 7 Days"].push(chat);
-        else if (d >= last30) groups["Last 30 Days"].push(chat);
-        else groups["Older"].push(chat);
+        if (d >= today) groups["Hari Ini"].push(chat);
+        else if (d >= yesterday) groups["Kemarin"].push(chat);
+        else if (d >= last7) groups["7 Hari Terakhir"].push(chat);
+        else if (d >= last30) groups["30 Hari Terakhir"].push(chat);
+        else groups["Lama"].push(chat);
     }
 
     return groups;
@@ -66,7 +66,7 @@ export const useChatStore = create<ChatState>()(
                 const id = generateId();
                 const chat: Chat = {
                     id,
-                    title: "New Chat",
+                    title: "Obrolan Baru",
                     messages: [],
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -114,7 +114,7 @@ export const useChatStore = create<ChatState>()(
                                 })),
                                 updatedAt: new Date(),
                                 title:
-                                    c.title === "New Chat" && messages.length > 0
+                                    c.title === "Obrolan Baru" && messages.length > 0
                                         ? messages[0].content.slice(0, 40) +
                                         (messages[0].content.length > 40 ? "..." : "")
                                         : c.title,

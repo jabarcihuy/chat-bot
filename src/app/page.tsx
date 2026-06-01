@@ -36,7 +36,7 @@ export default function Home() {
     updateChatMessages,
     setActiveChat,
   } = useChatStore();
-  const { model, temperature, systemPrompt } = useSettingsStore();
+  const { model, temperature, systemPrompt, mode } = useSettingsStore();
 
   const activeChat = chats.find((c) => c.id === activeChatId);
 
@@ -49,10 +49,11 @@ export default function Home() {
           model,
           temperature,
           systemPrompt,
+          mode,
         },
       }),
       onError: (error) => {
-        toast.error(error.message || "Something went wrong");
+        toast.error(error.message || "Terjadi kesalahan");
       },
       onFinish: () => {
         // Messages synced via the effect below
@@ -146,26 +147,33 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="relative h-screen w-full overflow-hidden bg-background">
       <AnimatedBackground />
-      <Sidebar />
+      
+      <div className="relative z-10 flex h-full w-full overflow-hidden">
+        {/* Permanent Sidebar for Desktop */}
+        <Sidebar />
 
-      <div className="relative z-10 flex flex-1 flex-col min-w-0">
-        <Header onOpenSettings={() => setSettingsOpen(true)} />
+        {/* Main Chat Column */}
+        <div className="flex flex-col flex-1 min-w-0 bg-transparent h-full overflow-hidden">
+          <Header onOpenSettings={() => setSettingsOpen(true)} />
 
-        <ChatArea
-          messages={messages}
-          isLoading={isLoading}
-          onSuggestionClick={handleSuggestion}
-        />
+          <main className="flex-1 flex flex-col overflow-hidden relative">
+            <ChatArea
+              messages={messages}
+              isLoading={isLoading}
+              onSuggestionClick={handleSuggestion}
+            />
+          </main>
 
-        <ChatInput
-          value={inputValue}
-          onChange={setInputValue}
-          onSubmit={handleSubmit}
-          onStop={stop}
-          isLoading={isLoading}
-        />
+          <ChatInput
+            value={inputValue}
+            onChange={setInputValue}
+            onSubmit={handleSubmit}
+            onStop={stop}
+            isLoading={isLoading}
+          />
+        </div>
       </div>
 
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />

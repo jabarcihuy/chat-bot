@@ -45,7 +45,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <SlidersHorizontal className="h-4 w-4" />
-                        Settings
+                        Pengaturan
                     </DialogTitle>
                 </DialogHeader>
 
@@ -53,11 +53,11 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                     <TabsList className="grid w-full grid-cols-2 bg-secondary/50">
                         <TabsTrigger value="general" className="text-xs gap-1.5">
                             <Sun className="h-3.5 w-3.5" />
-                            General
+                            Umum
                         </TabsTrigger>
                         <TabsTrigger value="advanced" className="text-xs gap-1.5">
                             <Cpu className="h-3.5 w-3.5" />
-                            Advanced
+                            Lanjutan
                         </TabsTrigger>
                     </TabsList>
 
@@ -65,9 +65,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                     <TabsContent value="general" className="space-y-5 mt-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <Label className="text-sm font-medium">Dark Mode</Label>
+                                <Label className="text-sm font-medium">Mode Gelap</Label>
                                 <p className="text-xs text-muted-foreground mt-0.5">
-                                    Toggle between light and dark theme
+                                    Pilih antara tema terang dan gelap
                                 </p>
                             </div>
                             <div className="flex items-center gap-2">
@@ -81,7 +81,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-sm font-medium">AI Model</Label>
+                            <Label className="text-sm font-medium">Model AI</Label>
                             <Select value={model} onValueChange={setModel}>
                                 <SelectTrigger className="bg-secondary/30">
                                     <SelectValue />
@@ -95,7 +95,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                                 </SelectContent>
                             </Select>
                             <p className="text-[11px] text-muted-foreground">
-                                Powered by Groq - Ultra-fast AI inference
+                                Ditenagai oleh Google Gemini - Model AI performa tinggi
                             </p>
                         </div>
                     </TabsContent>
@@ -104,7 +104,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                     <TabsContent value="advanced" className="space-y-5 mt-4">
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                                <Label className="text-sm font-medium">Temperature</Label>
+                                <Label className="text-sm font-medium">Temperatur</Label>
                                 <span className="text-xs text-muted-foreground font-mono bg-secondary/50 px-2 py-0.5 rounded">
                                     {temperature.toFixed(1)}
                                 </span>
@@ -118,23 +118,23 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                                 className="w-full"
                             />
                             <div className="flex justify-between text-[10px] text-muted-foreground">
-                                <span>Precise</span>
-                                <span>Balanced</span>
-                                <span>Creative</span>
+                                <span>Presisi</span>
+                                <span>Seimbang</span>
+                                <span>Kreatif</span>
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-sm font-medium">System Prompt</Label>
+                            <Label className="text-sm font-medium">Instruksi Sistem (System Prompt)</Label>
                             <Textarea
                                 value={systemPrompt}
                                 onChange={(e) => setSystemPrompt(e.target.value)}
-                                placeholder="You are a helpful assistant..."
+                                placeholder="Anda adalah asisten yang membantu..."
                                 rows={4}
                                 className="bg-secondary/30 text-xs resize-none"
                             />
                             <p className="text-[11px] text-muted-foreground">
-                                Custom instructions that define how the AI should behave.
+                                Instruksi khusus yang mendefinisikan cara AI berperilaku.
                             </p>
                         </div>
                     </TabsContent>

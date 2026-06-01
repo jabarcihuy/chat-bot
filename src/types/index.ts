@@ -19,4 +19,4 @@ export interface Settings {
     systemPrompt: string;
 }
 
-export type DateGroup = "Today" | "Yesterday" | "Last 7 Days" | "Last 30 Days" | "Older";
+export type DateGroup = "Hari Ini" | "Kemarin" | "7 Hari Terakhir" | "30 Hari Terakhir" | "Lama";

@@ -21,7 +21,7 @@ export function ThinkingIndicator() {
                     <div className="h-2 w-2 rounded-full bg-primary/60 thinking-dot" />
                     <div className="h-2 w-2 rounded-full bg-primary/60 thinking-dot" />
                 </div>
-                <span className="text-xs text-muted-foreground ml-1">Thinking...</span>
+                <span className="text-xs text-muted-foreground ml-1">Sedang berpikir...</span>
             </div>
         </motion.div>
     );
