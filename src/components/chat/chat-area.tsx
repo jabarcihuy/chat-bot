@@ -85,13 +85,38 @@ function WelcomeScreen({ onSuggestionClick, mode }: WelcomeScreenProps) {
     const { prdTask, setPrdTask } = useSettingsStore();
 
     const suggestions = [
-        { emoji: "💡", text: "Jelaskan tentang Quantum Computing" },
-        { emoji: "📝", text: "Tulis komponen React untuk login" },
-        { emoji: "🎯", text: "Debug kode Python saya" },
+        { text: "Jelaskan tentang Quantum Computing" },
+        { text: "Tulis komponen React untuk login" },
+        { text: "Debug kode Python saya" },
     ];
 
     if (mode === "prd") {
-        // ... (prdGuide definition)
+        const prdGuide = [
+            { 
+                id: "structure",
+                icon: <Rocket className="h-4 w-4 text-primary" />, 
+                title: "Struktur PRD", 
+                desc: "Ubah ide kasar Anda menjadi kerangka dokumen formal (Konteks, Masalah, Batasan)." 
+            },
+            { 
+                id: "stories",
+                icon: <MessageSquare className="h-4 w-4 text-accent" />, 
+                title: "User Stories", 
+                desc: "Jabarkan skenario pengguna secara spesifik (Sebagai... Saya ingin... Sehingga...)." 
+            },
+            { 
+                id: "tech",
+                icon: <Square className="h-4 w-4 text-foreground/60" />, 
+                title: "Tech Stack", 
+                desc: "Minta rekomendasi teknologi dan arsitektur yang paling pas untuk proyek Anda." 
+            },
+            { 
+                id: "metrics",
+                icon: <Plus className="h-4 w-4 text-foreground/60" />, 
+                title: "Metrik Sukses", 
+                desc: "Tentukan tolok ukur keberhasilan dan antisipasi berbagai edge cases." 
+            },
+        ] as const;
 
         return (
             <div className="flex flex-col items-center justify-center min-h-[70dvh] px-4">
@@ -205,7 +230,7 @@ function WelcomeScreen({ onSuggestionClick, mode }: WelcomeScreenProps) {
                 {suggestions.map((suggestion, i) => (
                     <motion.button
                         key={suggestion.text}
-                        className="group flex items-center gap-2 rounded-xl border border-border/50 bg-secondary/30 px-4 py-3 text-left text-xs transition-all hover:bg-secondary/60 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
+                        className="group flex items-center justify-center rounded-xl border border-border/50 bg-secondary/30 px-4 py-3 text-center text-xs transition-all hover:bg-secondary/60 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 + i * 0.08 }}
@@ -213,7 +238,6 @@ function WelcomeScreen({ onSuggestionClick, mode }: WelcomeScreenProps) {
                         whileTap={{ scale: 0.98 }}
                         onClick={() => onSuggestionClick?.(suggestion.text)}
                     >
-                        <span className="text-base">{suggestion.emoji}</span>
                         <span className="text-muted-foreground group-hover:text-foreground transition-colors">
                             {suggestion.text}
                         </span>
