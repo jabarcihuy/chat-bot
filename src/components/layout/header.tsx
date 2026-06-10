@@ -1,12 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { PanelLeftClose, PanelLeft, Settings, Sparkles, Sun, Moon, Rocket, MessageSquare } from "lucide-react";
+import { PanelLeftClose, PanelLeft, Settings, Sparkles, Sun, Moon, Rocket, MessageSquare, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useChatStore } from "@/store/chat-store";
 import { useSettingsStore } from "@/store/settings-store";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
+import { signOut } from "next-auth/react";
 
 interface HeaderProps {
     onOpenSettings: () => void;
@@ -19,7 +20,7 @@ export function Header({ onOpenSettings }: HeaderProps) {
 
     return (
         <motion.header
-            className="glass-strong sticky top-0 z-30 flex h-16 items-center justify-between px-6 gap-2 border-b border-border/10 shrink-0"
+            className="glass-strong sticky top-0 z-30 flex h-16 items-center justify-between px-3 sm:px-6 gap-1 sm:gap-2 border-b border-border/10 shrink-0"
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.3 }}
@@ -97,16 +98,16 @@ export function Header({ onOpenSettings }: HeaderProps) {
                     <span className="font-mono opacity-80">{model}</span>
                 </div>
 
-                            <div className="flex items-center gap-1 ml-2">
+                            <div className="flex items-center gap-0.5 sm:gap-1 ml-1 sm:ml-2">
                             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                             <Button
                             variant="ghost"
                             size="icon"
-                            className="h-9 w-9 rounded-full"
+                            className="h-8 w-8 sm:h-9 sm:w-9 rounded-full"
                             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                             >
-                            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                            <Sun className="h-3.5 w-3.5 sm:h-4 sm:w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                            <Moon className="absolute h-3.5 w-3.5 sm:h-4 sm:w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                             <span className="sr-only">Ganti tema</span>
                             </Button>
                             </motion.div>
@@ -115,11 +116,22 @@ export function Header({ onOpenSettings }: HeaderProps) {
                             <Button
                             variant="ghost"
                             size="icon"
-                            className="h-9 w-9 rounded-full"
+                            className="h-8 w-8 sm:h-9 sm:w-9 rounded-full"
                             onClick={onOpenSettings}
                             >
-                            <Settings className="h-4 w-4" />
+                            <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             <span className="sr-only">Pengaturan</span>
+                            </Button>
+                            </motion.div>
+                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 sm:h-9 sm:w-9 rounded-full"
+                            onClick={() => signOut({ callbackUrl: "/login" })}
+                            >
+                            <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-destructive/80" />
+                            <span className="sr-only">Keluar</span>
                             </Button>
                             </motion.div>
                 </div>

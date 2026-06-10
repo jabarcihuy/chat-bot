@@ -15,7 +15,7 @@ const MODEL_MAPPING: Record<string, string> = {
 
 export async function POST(req: Request) {
     try {
-        const { messages, model, temperature, systemPrompt, mode, prdTask } =
+        const { messages, model, temperature, systemPrompt, mode, prdTask, prdDocument, customPersonaInstruction } =
             await req.json();
 
         // Use server-side Google AI API key
@@ -56,6 +56,24 @@ export async function POST(req: Request) {
             2. Output HARUS berupa Markdown murni.
             3. Langsung mulai dengan Heading (misal: # Judul Proyek).
             4. Gunakan Bahasa Indonesia yang profesional.`;
+
+            if (customPersonaInstruction && customPersonaInstruction.trim()) {
+                effectiveSystemPrompt += `
+                
+                PETUNJUK ARSITEKTURAL/KUSTOM PENGGUNA:
+                ${customPersonaInstruction}`;
+            }
+
+            if (prdDocument && prdDocument.trim()) {
+                effectiveSystemPrompt += `
+                
+                DOKUMEN PRD SAAT INI (Konteks Penting):
+                AI harus membaca dokumen PRD saat ini di bawah untuk memastikan output tugas baru ("${taskName}") selaras dengan apa yang sudah tertulis di dokumen utama.
+                
+                \`\`\`markdown
+                ${prdDocument}
+                \`\`\``;
+            }
         }
 
         // Convert UIMessages to model messages

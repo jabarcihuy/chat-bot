@@ -9,6 +9,7 @@ export interface Chat {
     id: string;
     title: string;
     messages: Message[];
+    prdDocument?: string;
     createdAt: Date;
     updatedAt: Date;
 }

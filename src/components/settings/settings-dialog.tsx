@@ -34,9 +34,11 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
         model,
         temperature,
         systemPrompt,
+        customPersonaInstruction,
         setModel,
         setTemperature,
         setSystemPrompt,
+        setCustomPersonaInstruction,
     } = useSettingsStore();
 
     return (
@@ -130,11 +132,25 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                                 value={systemPrompt}
                                 onChange={(e) => setSystemPrompt(e.target.value)}
                                 placeholder="Anda adalah asisten yang membantu..."
-                                rows={4}
+                                rows={3}
                                 className="bg-secondary/30 text-xs resize-none"
                             />
                             <p className="text-[11px] text-muted-foreground">
                                 Instruksi khusus yang mendefinisikan cara AI berperilaku.
+                            </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium">Instruksi Tambahan Persona (Mode PRD)</Label>
+                            <Textarea
+                                value={customPersonaInstruction}
+                                onChange={(e) => setCustomPersonaInstruction(e.target.value)}
+                                placeholder="Misal: Saya ingin Tech Architect lebih condong menyarankan Node.js..."
+                                rows={3}
+                                className="bg-secondary/30 text-xs resize-none"
+                            />
+                            <p className="text-[11px] text-muted-foreground">
+                                Modifikasi khusus bagaimana AI bertindak pada target Mode PRD (Tech Stack, User Stories, dll).
                             </p>
                         </div>
                     </TabsContent>

@@ -10,6 +10,8 @@ import { Rocket, MessageSquare, Square, Plus, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UIMessage } from "@ai-sdk/react";
 
+import { useChatStore } from "@/store/chat-store";
+
 interface ChatAreaProps {
     messages: UIMessage[];
     isLoading: boolean;
@@ -25,18 +27,38 @@ function getTextFromParts(parts: UIMessage["parts"]): string {
 }
 
 export function ChatArea({ messages, isLoading, onSuggestionClick }: ChatAreaProps) {
-    const bottomRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const { mode } = useSettingsStore();
+    const { activeChatId } = useChatStore();
 
-    // Auto-scroll to bottom on new messages
+    // Auto-scroll to bottom of viewport container (prevents browser window scroll/layout shift)
     useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+        const viewport = containerRef.current?.querySelector('[data-slot="scroll-area-viewport"]');
+        if (viewport) {
+            setTimeout(() => {
+                viewport.scrollTo({
+                    top: viewport.scrollHeight,
+                    behavior: "smooth"
+                });
+            }, 60);
+        }
     }, [messages, isLoading]);
 
+    // Scroll back to the top of viewport and ensure window stays at (0,0)
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            window.scrollTo(0, 0);
+        }
+        const viewport = containerRef.current?.querySelector('[data-slot="scroll-area-viewport"]');
+        if (viewport) {
+            viewport.scrollTop = 0;
+        }
+    }, [activeChatId, mode]);
+
     return (
-        <div className="flex-1 overflow-hidden min-h-0">
+        <div ref={containerRef} className="flex-1 overflow-hidden min-h-0">
             <ScrollArea className="h-full w-full">
-                <div className="max-w-5xl mx-auto px-6 py-10 space-y-4">
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-4">
                     {messages.length === 0 && !isLoading && (
                         <WelcomeScreen onSuggestionClick={onSuggestionClick} mode={mode} />
                     )}
@@ -69,7 +91,7 @@ export function ChatArea({ messages, isLoading, onSuggestionClick }: ChatAreaPro
                             )}
                     </AnimatePresence>
 
-                    <div ref={bottomRef} className="h-4" />
+                    <div className="h-4" />
                 </div>
             </ScrollArea>
         </div>
@@ -119,7 +141,7 @@ function WelcomeScreen({ onSuggestionClick, mode }: WelcomeScreenProps) {
         ] as const;
 
         return (
-            <div className="flex flex-col items-center justify-center min-h-[70dvh] px-4">
+            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-16rem)] px-4">
                 <motion.div
                     className="mb-8 text-center max-w-2xl"
                     initial={{ opacity: 0, y: 20 }}
@@ -185,7 +207,7 @@ function WelcomeScreen({ onSuggestionClick, mode }: WelcomeScreenProps) {
     }
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-[60dvh] text-center px-4">
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-16rem)] text-center px-4">
             <motion.div
                 className="relative mb-6"
                 initial={{ scale: 0.8, opacity: 0 }}

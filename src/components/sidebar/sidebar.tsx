@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useChatStore, groupChatsByDate } from "@/store/chat-store";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
@@ -35,6 +35,7 @@ function SidebarContent() {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
+    const isDesktop = useMediaQuery("(min-width: 768px)");
 
     const grouped = groupChatsByDate(chats);
 
@@ -80,16 +81,28 @@ function SidebarContent() {
                         <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                         <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Ruang Kerja</span>
                     </div>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <Button
-                            size="sm"
-                            onClick={handleNew}
-                            className="h-8 gap-1.5 px-3 text-xs rounded-full font-bold shadow-sm shadow-primary/20"
-                        >
-                            <Plus className="h-3.5 w-3.5" />
-                            Baru
-                        </Button>
-                    </motion.div>
+                    <div className="flex items-center gap-1.5">
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <Button
+                                size="sm"
+                                onClick={handleNew}
+                                className="h-8 gap-1.5 px-3 text-xs rounded-full font-bold shadow-sm shadow-primary/20"
+                            >
+                                <Plus className="h-3.5 w-3.5" />
+                                Baru
+                            </Button>
+                        </motion.div>
+                        {!isDesktop && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full text-muted-foreground hover:bg-muted"
+                                onClick={() => setSidebarOpen(false)}
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Search input */}
@@ -136,7 +149,7 @@ function SidebarContent() {
                                         >
                                             <div
                                                 className={cn(
-                                                    "group flex items-center gap-3 rounded-xl px-3 py-2.5 cursor-pointer transition-all duration-200 border border-transparent",
+                                                    "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 cursor-pointer transition-all duration-200 border border-transparent overflow-hidden",
                                                     "hover:bg-primary/5 hover:border-primary/10",
                                                     activeChatId === chat.id && "bg-primary/10 border-primary/20 text-primary"
                                                 )}
@@ -146,12 +159,12 @@ function SidebarContent() {
                                                 }}
                                             >
                                                 <MessageSquare className={cn(
-                                                    "h-3.5 w-3.5 shrink-0",
+                                                    "h-3.5 w-3.5 shrink-0 z-10",
                                                     activeChatId === chat.id ? "text-primary" : "text-muted-foreground/40"
                                                 )} />
 
                                                 {editingId === chat.id ? (
-                                                    <div className="flex items-center gap-1 flex-1 min-w-0">
+                                                    <div className="flex items-center gap-1 flex-1 min-w-0 z-10 bg-background/50">
                                                         <Input
                                                             value={editTitle}
                                                             onChange={(e) => setEditTitle(e.target.value)}
@@ -159,21 +172,45 @@ function SidebarContent() {
                                                                 if (e.key === "Enter") handleRename(chat.id);
                                                                 if (e.key === "Escape") setEditingId(null);
                                                             }}
-                                                            className="h-7 text-xs flex-1 bg-background"
+                                                            className="h-7 text-xs flex-1 bg-background px-2"
                                                             autoFocus
                                                             onClick={(e) => e.stopPropagation()}
                                                         />
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-6 w-6 text-green-500 hover:text-green-600 hover:bg-green-500/10 shrink-0"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleRename(chat.id);
+                                                            }}
+                                                        >
+                                                            <Check className="h-3 w-3" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-6 w-6 text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 shrink-0"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setEditingId(null);
+                                                            }}
+                                                        >
+                                                            <X className="h-3 w-3" />
+                                                        </Button>
                                                     </div>
                                                 ) : (
                                                     <>
-                                                        <span className="text-[13px] truncate flex-1 font-medium">
+                                                        <span className="text-[13px] truncate font-medium flex-1 pr-12">
                                                             {chat.title}
                                                         </span>
-                                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        
+                                                        {/* Absolute positioned action buttons */}
+                                                        <div className="absolute right-2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-l from-sidebar via-sidebar to-transparent pl-4 py-1 z-10">
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                className="h-6 w-6 text-muted-foreground/40 hover:text-primary"
+                                                                className="h-6 w-6 text-muted-foreground/40 hover:text-primary shrink-0"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     setEditingId(chat.id);
@@ -185,7 +222,7 @@ function SidebarContent() {
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                className="h-6 w-6 text-muted-foreground/40 hover:text-destructive"
+                                                                className="h-6 w-6 text-muted-foreground/40 hover:text-destructive shrink-0"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     deleteChat(chat.id);
@@ -235,7 +272,7 @@ export function Sidebar() {
         <>
             {/* Desktop sidebar — permanent fixed column */}
             {isDesktop && (
-                <aside className="h-full w-[320px] flex-shrink-0 overflow-hidden glass-strong border-r border-border/10 bg-sidebar/40 backdrop-blur-xl">
+                <aside className="h-full w-[360px] flex-shrink-0 overflow-hidden glass-strong border-r border-border/10 bg-sidebar/40 backdrop-blur-xl">
                     <SidebarContent />
                 </aside>
             )}
@@ -243,7 +280,9 @@ export function Sidebar() {
             {/* Mobile sidebar — drawer functionality (Portaled by Sheet) */}
             {!isDesktop && (
                 <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-                    <SheetContent side="left" className="w-[300px] p-0 glass-strong border-r-0">
+                    <SheetContent side="left" className="w-[340px] p-0 glass-strong border-r-0" showCloseButton={false}>
+                        <SheetTitle className="sr-only">Navigasi Obrolan</SheetTitle>
+                        <SheetDescription className="sr-only">Daftar riwayat obrolan Anda</SheetDescription>
                         <SidebarContent />
                     </SheetContent>
                 </Sheet>

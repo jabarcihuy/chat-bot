@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import type { Chat, DateGroup } from "@/types";
 
 interface ChatState {
@@ -7,6 +6,7 @@ interface ChatState {
     activeChatId: string | null;
     sidebarOpen: boolean;
 
+    setChats: (chats: Chat[]) => void;
     createChat: () => string;
     deleteChat: (id: string) => void;
     renameChat: (id: string, title: string) => void;
@@ -16,6 +16,7 @@ interface ChatState {
         messages: { id: string; role: "user" | "assistant" | "system"; content: string; createdAt: Date }[]
     ) => void;
     updateChatTitle: (id: string, title: string) => void;
+    updateChatPrdDocument: (id: string, doc: string) => void;
     setSidebarOpen: (open: boolean) => void;
     toggleSidebar: () => void;
 }
@@ -55,89 +56,128 @@ export function groupChatsByDate(chats: Chat[]): Record<DateGroup, Chat[]> {
     return groups;
 }
 
-export const useChatStore = create<ChatState>()(
-    persist(
-        (set, get) => ({
-            chats: [],
-            activeChatId: null,
-            sidebarOpen: true,
+export const useChatStore = create<ChatState>()((set, get) => ({
+    chats: [],
+    activeChatId: null,
+    sidebarOpen: true,
 
-            createChat: () => {
-                const id = generateId();
-                const chat: Chat = {
-                    id,
-                    title: "Obrolan Baru",
-                    messages: [],
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                };
-                set((state) => ({
-                    chats: [chat, ...state.chats],
-                    activeChatId: id,
-                }));
-                return id;
-            },
+    setChats: (chats) => set({ chats }),
 
-            deleteChat: (id) => {
-                const state = get();
-                const remaining = state.chats.filter((c) => c.id !== id);
-                set({
-                    chats: remaining,
-                    activeChatId:
-                        state.activeChatId === id
-                            ? remaining.length > 0
-                                ? remaining[0].id
-                                : null
-                            : state.activeChatId,
-                });
-            },
+    createChat: () => {
+        const id = generateId();
+        const chat: Chat = {
+            id,
+            title: "Obrolan Baru",
+            messages: [],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
+        set((state) => ({
+            chats: [chat, ...state.chats],
+            activeChatId: id,
+        }));
 
-            renameChat: (id, title) => {
-                set((state) => ({
-                    chats: state.chats.map((c) =>
-                        c.id === id ? { ...c, title, updatedAt: new Date() } : c
-                    ),
-                }));
-            },
+        // Async sync to database
+        fetch("/api/chats", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, title: "Obrolan Baru" }),
+        }).catch((err) => console.error("Failed to sync new chat to database:", err));
 
-            setActiveChat: (id) => set({ activeChatId: id }),
+        return id;
+    },
 
-            updateChatMessages: (id, messages) => {
-                set((state) => ({
-                    chats: state.chats.map((c) =>
-                        c.id === id
-                            ? {
-                                ...c,
-                                messages: messages.map((m) => ({
-                                    ...m,
-                                    createdAt: new Date(m.createdAt),
-                                })),
-                                updatedAt: new Date(),
-                                title:
-                                    c.title === "Obrolan Baru" && messages.length > 0
-                                        ? messages[0].content.slice(0, 40) +
-                                        (messages[0].content.length > 40 ? "..." : "")
-                                        : c.title,
-                            }
-                            : c
-                    ),
-                }));
-            },
+    deleteChat: (id) => {
+        const state = get();
+        const remaining = state.chats.filter((c) => c.id !== id);
+        set({
+            chats: remaining,
+            activeChatId:
+                state.activeChatId === id
+                    ? remaining.length > 0
+                        ? remaining[0].id
+                        : null
+                    : state.activeChatId,
+        });
 
-            updateChatTitle: (id, title) => {
-                set((state) => ({
-                    chats: state.chats.map((c) =>
-                        c.id === id ? { ...c, title, updatedAt: new Date() } : c
-                    ),
-                }));
-            },
+        // Async sync to database
+        fetch(`/api/chats/${id}`, {
+            method: "DELETE",
+        }).catch((err) => console.error("Failed to delete chat from database:", err));
+    },
 
-            setSidebarOpen: (open) => set({ sidebarOpen: open }),
-            toggleSidebar: () =>
-                set((state) => ({ sidebarOpen: !state.sidebarOpen })),
-        }),
-        {
-            name: "nexus-chats",
-        }
-    )
-);
+    renameChat: (id, title) => {
+        set((state) => ({
+            chats: state.chats.map((c) =>
+                c.id === id ? { ...c, title, updatedAt: new Date() } : c
+            ),
+        }));
+
+        // Async sync to database
+        fetch(`/api/chats/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title }),
+        }).catch((err) => console.error("Failed to rename chat in database:", err));
+    },
+
+    setActiveChat: (id) => set({ activeChatId: id }),
+
+    updateChatMessages: (id, messages) => {
+        set((state) => ({
+            chats: state.chats.map((c) =>
+                c.id === id
+                    ? {
+                        ...c,
+                        messages: messages.map((m) => ({
+                            ...m,
+                            createdAt: new Date(m.createdAt),
+                        })),
+                        updatedAt: new Date(),
+                    }
+                    : c
+            ),
+        }));
+
+        // Async sync to database
+        fetch(`/api/chats/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages }),
+        }).catch((err) => console.error("Failed to update chat messages in database:", err));
+    },
+
+    updateChatTitle: (id, title) => {
+        set((state) => ({
+            chats: state.chats.map((c) =>
+                c.id === id ? { ...c, title, updatedAt: new Date() } : c
+            ),
+        }));
+
+        // Async sync to database
+        fetch(`/api/chats/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title }),
+        }).catch((err) => console.error("Failed to update chat title in database:", err));
+    },
+
+    updateChatPrdDocument: (id, prdDocument) => {
+        set((state) => ({
+            chats: state.chats.map((c) =>
+                c.id === id ? { ...c, prdDocument, updatedAt: new Date() } : c
+            ),
+        }));
+
+        // Async sync to database
+        fetch(`/api/chats/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prdDocument }),
+        }).catch((err) => console.error("Failed to update chat PRD document in database:", err));
+    },
+
+    setSidebarOpen: (open) => set({ sidebarOpen: open }),
+    toggleSidebar: () =>
+        set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+}));
