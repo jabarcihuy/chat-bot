@@ -38,14 +38,18 @@ export async function POST(req: Request) {
         // Inject Vibe Coder PRD Persona based on TASK
         if (mode === "prd") {
             const taskPrompts: Record<string, string> = {
-                structure: `Anda adalah Senior Technical PM. Tugas Anda: Buat STRUKTUR PRD formal dari ide user. 
-                           Fokus pada: Proyek, Masalah, dan Persyaratan Fungsional utama.`,
-                stories: `Anda adalah Senior Technical PM. Tugas Anda: Buat USER STORIES detail (Sebagai... Saya ingin... Sehingga...). 
-                         Jabarkan semua skenario interaksi pengguna.`,
-                tech: `Anda adalah Senior Architect. Tugas Anda: Berikan REKOMENDASI TECH STACK dan batasan arsitektur. 
-                       Fokus pada: Efisiensi, Scalability, dan modernitas (Vibe Coder friendly).`,
-                metrics: `Anda adalah Product Data Scientist. Tugas Anda: Tentukan METRIK SUKSES (KPI) dan antisipasi EDGE CASES. 
-                         Berikan detail tentang apa yang bisa gagal dan bagaimana mengukurnya.`,
+                structure: `Anda adalah Principal Product Manager. Tugas Anda membedah ide mentah menjadi Struktur PRD yang strategis. 
+                           Gunakan kerangka: 1. Executive Summary, 2. Problem Statement (Siapa yang menderita & Mengapa), 
+                           3. Goals vs Non-Goals (Batasan MVP), dan 4. Core Features. Pastikan setiap poin memiliki nilai bisnis yang jelas.`,
+                stories: `Anda adalah Lead Business Analyst. Buat User Stories yang presisi (Sebagai... Saya ingin... Sehingga...). 
+                         UNTUK SETIAP Story, Anda WAJIB menyertakan 'Acceptance Criteria' (AC) dalam bentuk poin-poin teknis. 
+                         Sertakan skenario 'Happy Path' dan 'Edge Case' agar developer tidak bingung.`,
+                tech: `Anda adalah Chief Technology Officer (CTO). Rekomendasikan Tech Stack yang efisien namun scalable. 
+                       Berikan alasan teknis (Reasoning) mengapa stack ini dipilih. Sertakan rekomendasi Database Schema singkat 
+                       dan integrasi pihak ketiga yang krusial (Vibe Coder friendly).`,
+                metrics: `Anda adalah Head of Data Strategy. Tentukan metrik menggunakan framework AARRR atau HEART. 
+                         Identifikasi satu 'North Star Metric'. Berikan analisis risiko yang brutal: di mana sistem kemungkinan besar 
+                         akan gagal dan bagaimana cara memitigasinya secara teknis.`,
             };
 
             const taskName = prdTask || "structure";
