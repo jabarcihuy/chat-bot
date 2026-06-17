@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useChatStore } from "@/store/chat-store";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -15,7 +15,13 @@ import {
     Sparkles, 
     Printer,
     FileCode,
-    RefreshCw
+    Bold,
+    Italic,
+    List,
+    ListOrdered,
+    Code,
+    Quote,
+    Table
 } from "lucide-react";
 import { toast } from "sonner";
 import { MarkdownRenderer } from "./markdown-renderer";
@@ -26,17 +32,16 @@ export function PrdCanvas() {
     const activeChat = chats.find((c) => c.id === activeChatId);
     
     const [docContent, setDocContent] = useState("");
+    const [prevActiveChatId, setPrevActiveChatId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState("edit");
     const [copied, setCopied] = useState(false);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    // Sync state with active chat
-    useEffect(() => {
-        if (activeChat) {
-            setDocContent(activeChat.prdDocument || "");
-        } else {
-            setDocContent("");
-        }
-    }, [activeChatId, activeChat]);
+    // Sync state with active chat during render to avoid cascading effects
+    if (activeChatId !== prevActiveChatId) {
+        setPrevActiveChatId(activeChatId);
+        setDocContent(activeChat ? activeChat.prdDocument || "" : "");
+    }
 
     if (!activeChat) {
         return (
@@ -50,6 +55,64 @@ export function PrdCanvas() {
     const handleContentChange = (val: string) => {
         setDocContent(val);
         updateChatPrdDocument(activeChat.id, val);
+    };
+
+    const insertMarkdown = (syntax: 'bold' | 'italic' | 'h1' | 'h2' | 'bullet' | 'number' | 'code' | 'table' | 'quote') => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        const selectedText = text.substring(start, end);
+
+        let replacement = "";
+        let cursorOffset = 0;
+
+        switch (syntax) {
+            case 'bold':
+                replacement = `**${selectedText || "teks tebal"}**`;
+                cursorOffset = selectedText ? 0 : 2;
+                break;
+            case 'italic':
+                replacement = `*${selectedText || "teks miring"}*`;
+                cursorOffset = selectedText ? 0 : 1;
+                break;
+            case 'h1':
+                replacement = `\n# ${selectedText || "Judul 1"}\n`;
+                cursorOffset = selectedText ? 0 : 0;
+                break;
+            case 'h2':
+                replacement = `\n## ${selectedText || "Judul 2"}\n`;
+                cursorOffset = selectedText ? 0 : 0;
+                break;
+            case 'bullet':
+                replacement = `\n- ${selectedText || "Item list"}\n`;
+                break;
+            case 'number':
+                replacement = `\n1. ${selectedText || "Item list"}\n`;
+                break;
+            case 'code':
+                replacement = `\n\`\`\`javascript\n${selectedText || "// kode Anda di sini"}\n\`\`\`\n`;
+                break;
+            case 'table':
+                replacement = `\n| Kolom 1 | Kolom 2 |\n|---|---|\n| ${selectedText || "Baris 1"} | Data 2 |\n`;
+                break;
+            case 'quote':
+                replacement = `\n> ${selectedText || "Kutipan"}\n`;
+                break;
+        }
+
+        const newContent = text.substring(0, start) + replacement + text.substring(end);
+        handleContentChange(newContent);
+
+        // Refocus textarea and place cursor appropriately
+        setTimeout(() => {
+            textarea.focus();
+            const newSelectionStart = start + replacement.length - cursorOffset;
+            const newSelectionEnd = start + replacement.length - cursorOffset;
+            textarea.setSelectionRange(newSelectionStart, newSelectionEnd);
+        }, 50);
     };
 
     const handleCopy = () => {
@@ -85,11 +148,18 @@ export function PrdCanvas() {
             return;
         }
 
+        const escapedTitle = activeChat.title
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
         // Generate a clean HTML page for PDF printing
         printWindow.document.write(`
             <html>
                 <head>
-                    <title>PRD - ${activeChat.title}</title>
+                    <title>PRD - ${escapedTitle}</title>
                     <style>
                         body {
                             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -159,14 +229,18 @@ export function PrdCanvas() {
             </html>
         `);
 
-        // We can render the document simple parsing or just inject raw markdown with simple replacement
-        // For accurate printing, it's easiest to write a quick parser or use marked if available,
-        // otherwise we can just use the HTML preview we already have.
-        // Let's write the markdown rendering to it.
         const contentDiv = printWindow.document.getElementById("content");
         if (contentDiv) {
+            // Escape raw HTML entities to prevent XSS injection
+            const escapedContent = docContent
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+
             // Simple markdown parser for printing
-            let html = docContent
+            let html = escapedContent
                 .replace(/^# (.*$)/gim, '<h1>$1</h1>')
                 .replace(/^## (.*$)/gim, '<h2>$1</h2>')
                 .replace(/^### (.*$)/gim, '<h3>$1</h3>')
@@ -300,12 +374,140 @@ export function PrdCanvas() {
 
                 {/* Edit tab pane */}
                 <TabsContent value="edit" className="flex flex-col flex-1 m-0 p-0 overflow-hidden relative">
-                    <textarea
-                        value={docContent}
-                        onChange={(e) => handleContentChange(e.target.value)}
-                        placeholder="Mulai ketik Dokumen PRD Anda di sini dalam format Markdown... atau klik tombol 'Masukkan ke Kanvas' pada obrolan untuk menambahkan konten secara otomatis."
-                        className="w-full h-full p-6 bg-transparent text-sm resize-none focus:outline-none font-mono leading-relaxed border-0 focus:ring-0 selection:bg-primary/20 placeholder:text-muted-foreground/40 overflow-y-auto"
-                    />
+                    {docContent.length === 0 ? (
+                        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-xl mx-auto space-y-6">
+                            <div className="p-4 rounded-3xl bg-primary/10 text-primary">
+                                <FileText className="h-10 w-10 animate-pulse" />
+                            </div>
+                            <div className="space-y-2">
+                                <h3 className="text-sm font-bold">Kanvas PRD Kosong</h3>
+                                <p className="text-[11px] text-muted-foreground leading-relaxed max-w-xs mx-auto">
+                                    Pilih opsi di bawah untuk mulai menulis dokumen PRD Anda atau minta AI di panel obrolan sebelah kiri untuk menyusunnya secara otomatis.
+                                </p>
+                            </div>
+                            <div className="grid gap-3 w-full sm:grid-cols-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={handleAutoGenerateTemplate}
+                                    className="p-4 h-auto rounded-xl flex flex-col items-center gap-2 border-border/10 hover:border-primary/30 hover:bg-muted/10 bg-transparent transition-all duration-200"
+                                >
+                                    <Sparkles className="h-4 w-4 text-primary" />
+                                    <div className="text-center">
+                                        <div className="text-[11px] font-bold">Gunakan Template</div>
+                                        <div className="text-[9px] text-muted-foreground">Format standar terstruktur</div>
+                                    </div>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => handleContentChange("# PRD Baru\n\nMulai ketik di sini...")}
+                                    className="p-4 h-auto rounded-xl flex flex-col items-center gap-2 border-border/10 hover:border-primary/30 hover:bg-muted/10 bg-transparent transition-all duration-200"
+                                >
+                                    <Edit3 className="h-4 w-4 text-accent" />
+                                    <div className="text-center">
+                                        <div className="text-[11px] font-bold">Mulai Dari Nol</div>
+                                        <div className="text-[9px] text-muted-foreground">Dokumen kosong baru</div>
+                                    </div>
+                                </Button>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Markdown Toolbar */}
+                            <div className="flex items-center gap-1 px-4 py-1.5 border-b border-border/10 bg-muted/10 shrink-0 overflow-x-auto no-scrollbar">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => insertMarkdown('bold')}
+                                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                                    title="Tebal (Bold)"
+                                >
+                                    <Bold className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => insertMarkdown('italic')}
+                                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                                    title="Miring (Italic)"
+                                >
+                                    <Italic className="h-3.5 w-3.5" />
+                                </Button>
+                                <div className="w-[1px] h-4 bg-border/20 mx-1 shrink-0" />
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => insertMarkdown('h1')}
+                                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted font-bold text-[10px] font-mono"
+                                    title="Judul 1"
+                                >
+                                    H1
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => insertMarkdown('h2')}
+                                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted font-bold text-[10px] font-mono"
+                                    title="Judul 2"
+                                >
+                                    H2
+                                </Button>
+                                <div className="w-[1px] h-4 bg-border/20 mx-1 shrink-0" />
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => insertMarkdown('bullet')}
+                                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                                    title="Daftar Poin"
+                                >
+                                    <List className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => insertMarkdown('number')}
+                                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                                    title="Daftar Angka"
+                                >
+                                    <ListOrdered className="h-3.5 w-3.5" />
+                                </Button>
+                                <div className="w-[1px] h-4 bg-border/20 mx-1 shrink-0" />
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => insertMarkdown('code')}
+                                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                                    title="Blok Kode"
+                                >
+                                    <Code className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => insertMarkdown('quote')}
+                                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                                    title="Kutipan"
+                                >
+                                    <Quote className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => insertMarkdown('table')}
+                                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                                    title="Tabel"
+                                >
+                                    <Table className="h-3.5 w-3.5" />
+                                </Button>
+                            </div>
+                            <textarea
+                                ref={textareaRef}
+                                value={docContent}
+                                onChange={(e) => handleContentChange(e.target.value)}
+                                placeholder="Mulai ketik Dokumen PRD Anda di sini dalam format Markdown... atau klik tombol 'Masukkan ke Kanvas' pada obrolan untuk menambahkan konten secara otomatis."
+                                className="w-full h-full p-6 bg-transparent text-sm resize-none focus:outline-none font-mono leading-relaxed border-0 focus:ring-0 selection:bg-primary/20 placeholder:text-muted-foreground/40 overflow-y-auto"
+                            />
+                        </>
+                    )}
                 </TabsContent>
 
                 {/* Preview tab pane */}

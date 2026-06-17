@@ -34,8 +34,9 @@ export default function RegisterPage() {
 
       toast.success("Akun berhasil dibuat! Silakan masuk.");
       router.push("/login");
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Terjadi kesalahan";
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

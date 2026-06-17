@@ -20,7 +20,7 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
     const handleCopy = async () => {
         await navigator.clipboard.writeText(code);
         setCopied(true);
-        toast.success("Code copied to clipboard!");
+        toast.success("Kode berhasil disalin!");
         setTimeout(() => setCopied(false), 2000);
     };
 

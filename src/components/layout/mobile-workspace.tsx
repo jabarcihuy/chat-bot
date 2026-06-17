@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSettingsStore } from "@/store/settings-store";
 import { useChatStore } from "@/store/chat-store";
 import { Header } from "./header";
@@ -35,11 +35,14 @@ export function MobileWorkspace({
     const { mode } = useSettingsStore();
     const { activeChatId } = useChatStore();
     const [activeMobileTab, setActiveMobileTab] = useState<"chat" | "canvas">("chat");
+    const [prevKey, setPrevKey] = useState("");
 
-    // Reset mobile tab to chat when activeChatId or mode changes
-    useEffect(() => {
+    // Reset mobile tab to chat during render when activeChatId or mode changes to avoid cascading effects
+    const currentKey = `${activeChatId}-${mode}`;
+    if (prevKey !== currentKey) {
+        setPrevKey(currentKey);
         setActiveMobileTab("chat");
-    }, [activeChatId, mode]);
+    }
 
     return (
         <div className="flex md:hidden flex-col flex-1 min-w-0 bg-transparent h-full overflow-hidden">

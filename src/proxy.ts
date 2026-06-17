@@ -6,15 +6,16 @@ const { auth } = NextAuth(authConfig)
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const isAuthPage = req.nextUrl.pathname.startsWith('/login') || req.nextUrl.pathname.startsWith('/register');
+  const isChatPage = req.nextUrl.pathname.startsWith('/chat');
 
   if (isAuthPage) {
     if (isLoggedIn) {
-      return Response.redirect(new URL('/', req.nextUrl));
+      return Response.redirect(new URL('/chat', req.nextUrl));
     }
     return null;
   }
 
-  if (!isLoggedIn) {
+  if (isChatPage && !isLoggedIn) {
     return Response.redirect(new URL('/login', req.nextUrl));
   }
 })

@@ -1,14 +1,15 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatMessage } from "./chat-message";
 import { ThinkingIndicator } from "./thinking-indicator";
 import { useSettingsStore } from "@/store/settings-store";
-import { Rocket, MessageSquare, Square, Plus, Info } from "lucide-react";
+import { Rocket, MessageSquare, Square, Plus, Info, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UIMessage } from "@ai-sdk/react";
+import { Button } from "@/components/ui/button";
 
 import { useChatStore } from "@/store/chat-store";
 
@@ -30,6 +31,7 @@ export function ChatArea({ messages, isLoading, onSuggestionClick }: ChatAreaPro
     const containerRef = useRef<HTMLDivElement>(null);
     const { mode } = useSettingsStore();
     const { activeChatId } = useChatStore();
+    const [showScrollButton, setShowScrollButton] = useState(false);
 
     // Auto-scroll to bottom of viewport container (prevents browser window scroll/layout shift)
     useEffect(() => {
@@ -55,8 +57,36 @@ export function ChatArea({ messages, isLoading, onSuggestionClick }: ChatAreaPro
         }
     }, [activeChatId, mode]);
 
+    // Listen to scroll events to toggle scroll-to-bottom button visibility
+    useEffect(() => {
+        const viewport = containerRef.current?.querySelector('[data-slot="scroll-area-viewport"]');
+        if (!viewport) return;
+
+        const handleScroll = () => {
+            const offsetFromBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+            setShowScrollButton(offsetFromBottom > 300);
+        };
+
+        viewport.addEventListener("scroll", handleScroll, { passive: true });
+        handleScroll();
+
+        return () => {
+            viewport.removeEventListener("scroll", handleScroll);
+        };
+    }, [messages, isLoading]);
+
+    const scrollToBottom = () => {
+        const viewport = containerRef.current?.querySelector('[data-slot="scroll-area-viewport"]');
+        if (viewport) {
+            viewport.scrollTo({
+                top: viewport.scrollHeight,
+                behavior: "smooth"
+            });
+        }
+    };
+
     return (
-        <div ref={containerRef} className="flex-1 overflow-hidden min-h-0">
+        <div ref={containerRef} className="flex-1 overflow-hidden min-h-0 relative">
             <ScrollArea className="h-full w-full">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-4">
                     {messages.length === 0 && !isLoading && (
@@ -94,6 +124,29 @@ export function ChatArea({ messages, isLoading, onSuggestionClick }: ChatAreaPro
                     <div className="h-4" />
                 </div>
             </ScrollArea>
+
+            {/* Scroll-to-Bottom Button */}
+            <AnimatePresence>
+                {showScrollButton && (
+                    <motion.div
+                        className="absolute bottom-5 right-5 z-20"
+                        initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        <Button
+                            variant="secondary"
+                            size="icon"
+                            onClick={scrollToBottom}
+                            className="h-10 w-10 rounded-full shadow-lg border border-border/10 bg-background/80 backdrop-blur-md hover:bg-secondary/80 flex items-center justify-center text-foreground hover:scale-105 transition-transform"
+                            aria-label="Gulir ke bawah"
+                        >
+                            <ArrowDown className="h-5 w-5 animate-bounce" />
+                        </Button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
@@ -116,25 +169,25 @@ function WelcomeScreen({ onSuggestionClick, mode }: WelcomeScreenProps) {
         const prdGuide = [
             { 
                 id: "structure",
-                icon: <Rocket className="h-4 w-4 text-primary" />, 
+                icon: <Rocket className="h-4 w-4" />, 
                 title: "Struktur PRD", 
                 desc: "Ubah ide kasar Anda menjadi kerangka dokumen formal (Konteks, Masalah, Batasan)." 
             },
             { 
                 id: "stories",
-                icon: <MessageSquare className="h-4 w-4 text-accent" />, 
+                icon: <MessageSquare className="h-4 w-4" />, 
                 title: "User Stories", 
                 desc: "Jabarkan skenario pengguna secara spesifik (Sebagai... Saya ingin... Sehingga...)." 
             },
             { 
                 id: "tech",
-                icon: <Square className="h-4 w-4 text-foreground/60" />, 
+                icon: <Square className="h-4 w-4" />, 
                 title: "Tech Stack", 
                 desc: "Minta rekomendasi teknologi dan arsitektur yang paling pas untuk proyek Anda." 
             },
             { 
                 id: "metrics",
-                icon: <Plus className="h-4 w-4 text-foreground/60" />, 
+                icon: <Plus className="h-4 w-4" />, 
                 title: "Metrik Sukses", 
                 desc: "Tentukan tolok ukur keberhasilan dan antisipasi berbagai edge cases." 
             },
@@ -179,7 +232,9 @@ function WelcomeScreen({ onSuggestionClick, mode }: WelcomeScreenProps) {
                             <div className="flex items-start gap-4">
                                 <div className={cn(
                                     "p-2.5 rounded-xl transition-colors shrink-0",
-                                    prdTask === item.id ? "bg-primary text-primary-foreground" : "bg-secondary/50 group-hover:bg-secondary"
+                                    prdTask === item.id 
+                                        ? "bg-primary text-primary-foreground" 
+                                        : "bg-secondary/50 text-muted-foreground group-hover:text-foreground group-hover:bg-secondary"
                                 )}>
                                     {item.icon}
                                 </div>

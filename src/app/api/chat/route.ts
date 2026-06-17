@@ -1,7 +1,14 @@
 import { streamText, convertToModelMessages, type UIMessage } from "ai";
 import { google } from "@ai-sdk/google";
+import { auth } from "@/auth";
+import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 
 export const maxDuration = 60;
+
+const CHAT_RATE_LIMIT = {
+    limit: 20,
+    windowMs: 60_000,
+};
 
 // Map legacy or imprecise model IDs to verified latest IDs from Google API
 const MODEL_MAPPING: Record<string, string> = {
@@ -15,8 +22,41 @@ const MODEL_MAPPING: Record<string, string> = {
 
 export async function POST(req: Request) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return Response.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const rateLimit = checkRateLimit(
+            `chat:${session.user.id}`,
+            CHAT_RATE_LIMIT
+        );
+        if (!rateLimit.allowed) {
+            return Response.json(
+                {
+                    error: "Terlalu banyak permintaan. Silakan coba lagi sebentar.",
+                },
+                {
+                    status: 429,
+                    headers: rateLimitHeaders(rateLimit),
+                }
+            );
+        }
+
+        let body;
+        try {
+            body = await req.json();
+        } catch {
+            return Response.json(
+                { error: "Format request body JSON tidak valid" },
+                { status: 400 }
+            );
+        }
         const { messages, model, temperature, systemPrompt, mode, prdTask, prdDocument, customPersonaInstruction } =
-            await req.json();
+            body;
 
         // Use server-side Google AI API key
         const serverApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -93,11 +133,18 @@ export async function POST(req: Request) {
             maxOutputTokens: 8192, // Verified working property name
         });
 
-        return result.toUIMessageStreamResponse();
+        const response = result.toUIMessageStreamResponse();
+        const headers = rateLimitHeaders(rateLimit);
+        for (const [name, value] of Object.entries(headers)) {
+            response.headers.set(name, value);
+        }
+
+        return response;
     } catch (error: unknown) {
-        const message =
-            error instanceof Error ? error.message : "Terjadi kesalahan yang tidak terduga";
-        return new Response(JSON.stringify({ error: message }), {
+        console.error("LLM Chat API Error:", error);
+        return new Response(JSON.stringify({ 
+            error: "Terjadi kesalahan saat menghubungi layanan AI. Silakan coba beberapa saat lagi." 
+        }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
         });

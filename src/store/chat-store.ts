@@ -1,5 +1,37 @@
 import { create } from "zustand";
 import type { Chat, DateGroup } from "@/types";
+import { toast } from "sonner";
+
+async function safeSync(url: string, init?: RequestInit, errorContext = "Sinkronisasi gagal") {
+    try {
+        const res = await fetch(url, init);
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            const detailedError = data.error || res.statusText || `Status ${res.status}`;
+            toast.error(`${errorContext}: ${detailedError}`, {
+                action: {
+                    label: "Coba Lagi",
+                    onClick: () => {
+                        safeSync(url, init, errorContext);
+                    }
+                }
+            });
+            return false;
+        }
+        return true;
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Kesalahan jaringan";
+        toast.error(`${errorContext}: ${message}`, {
+            action: {
+                label: "Coba Lagi",
+                onClick: () => {
+                    safeSync(url, init, errorContext);
+                }
+            }
+        });
+        return false;
+    }
+}
 
 interface ChatState {
     chats: Chat[];
@@ -78,11 +110,11 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         }));
 
         // Async sync to database
-        fetch("/api/chats", {
+        safeSync("/api/chats", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id, title: "Obrolan Baru" }),
-        }).catch((err) => console.error("Failed to sync new chat to database:", err));
+        }, "Gagal membuat obrolan di database");
 
         return id;
     },
@@ -101,9 +133,9 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         });
 
         // Async sync to database
-        fetch(`/api/chats/${id}`, {
+        safeSync(`/api/chats/${id}`, {
             method: "DELETE",
-        }).catch((err) => console.error("Failed to delete chat from database:", err));
+        }, "Gagal menghapus obrolan");
     },
 
     renameChat: (id, title) => {
@@ -114,11 +146,11 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         }));
 
         // Async sync to database
-        fetch(`/api/chats/${id}`, {
+        safeSync(`/api/chats/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ title }),
-        }).catch((err) => console.error("Failed to rename chat in database:", err));
+        }, "Gagal mengubah nama obrolan");
     },
 
     setActiveChat: (id) => set({ activeChatId: id }),
@@ -140,11 +172,11 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         }));
 
         // Async sync to database
-        fetch(`/api/chats/${id}`, {
+        safeSync(`/api/chats/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ messages }),
-        }).catch((err) => console.error("Failed to update chat messages in database:", err));
+        }, "Gagal menyimpan pesan");
     },
 
     updateChatTitle: (id, title) => {
@@ -155,11 +187,11 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         }));
 
         // Async sync to database
-        fetch(`/api/chats/${id}`, {
+        safeSync(`/api/chats/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ title }),
-        }).catch((err) => console.error("Failed to update chat title in database:", err));
+        }, "Gagal memperbarui judul");
     },
 
     updateChatPrdDocument: (id, prdDocument) => {
@@ -170,11 +202,11 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         }));
 
         // Async sync to database
-        fetch(`/api/chats/${id}`, {
+        safeSync(`/api/chats/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ prdDocument }),
-        }).catch((err) => console.error("Failed to update chat PRD document in database:", err));
+        }, "Gagal menyimpan dokumen PRD");
     },
 
     setSidebarOpen: (open) => set({ sidebarOpen: open }),

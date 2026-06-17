@@ -41,9 +41,10 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
             return <>{children}</>;
         },
         a({ href, children, ...props }) {
+            const isSafe = href && !/^(javascript|data|vbscript):/i.test(href);
             return (
                 <a
-                    href={href}
+                    href={isSafe ? href : "#"}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"

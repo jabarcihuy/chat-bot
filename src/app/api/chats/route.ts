@@ -20,7 +20,7 @@ export async function GET() {
     });
 
     return NextResponse.json(chats);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching chats:", error);
     return NextResponse.json({ error: "Failed to fetch chats" }, { status: 500 });
   }
@@ -32,8 +32,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  let body;
   try {
-    const { id, title } = await req.json();
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Format request body JSON tidak valid" }, { status: 400 });
+  }
+
+  try {
+    const { id, title } = body;
     const chat = await prisma.chat.create({
       data: {
         id: id || undefined,
@@ -43,7 +50,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(chat);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating chat:", error);
     return NextResponse.json({ error: "Failed to create chat" }, { status: 500 });
   }

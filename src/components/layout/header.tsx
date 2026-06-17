@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { PanelLeftClose, PanelLeft, Settings, Sparkles, Sun, Moon, Rocket, MessageSquare, LogOut } from "lucide-react";
+import { PanelLeftClose, PanelLeft, Settings, Sparkles, Sun, Moon, Rocket, MessageSquare, LogOut, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useChatStore } from "@/store/chat-store";
 import { useSettingsStore } from "@/store/settings-store";
@@ -14,9 +14,17 @@ interface HeaderProps {
 }
 
 export function Header({ onOpenSettings }: HeaderProps) {
-    const { sidebarOpen, toggleSidebar } = useChatStore();
+    const { sidebarOpen, toggleSidebar, activeChatId, updateChatMessages } = useChatStore();
     const { model, mode, setMode } = useSettingsStore();
     const { theme, setTheme } = useTheme();
+
+    const handleClearChat = () => {
+        if (!activeChatId) return;
+        const confirmClear = window.confirm("Apakah Anda yakin ingin menghapus semua pesan dalam obrolan ini?");
+        if (confirmClear) {
+            updateChatMessages(activeChatId, []);
+        }
+    };
 
     return (
         <motion.header
@@ -88,6 +96,20 @@ export function Header({ onOpenSettings }: HeaderProps) {
                     </Button>
                 </div>
 
+                {activeChatId && (
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleClearChat}
+                            className="h-8 px-2.5 rounded-full text-[10px] font-bold text-destructive/80 hover:text-destructive hover:bg-destructive/10 border border-destructive/10 transition-all duration-200 gap-1 flex items-center"
+                        >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline">Bersihkan Obrolan</span>
+                        </Button>
+                    </motion.div>
+                )}
+
                 <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/10 backdrop-blur-md text-[10px] font-bold text-muted-foreground border border-border/10">
                     <div className={cn(
                         "w-1.5 h-1.5 rounded-full animate-pulse",
@@ -98,7 +120,7 @@ export function Header({ onOpenSettings }: HeaderProps) {
                     <span className="font-mono opacity-80">{model}</span>
                 </div>
 
-                            <div className="flex items-center gap-0.5 sm:gap-1 ml-1 sm:ml-2">
+                            <div className="hidden md:flex items-center gap-0.5 sm:gap-1 ml-1 sm:ml-2">
                             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                             <Button
                             variant="ghost"

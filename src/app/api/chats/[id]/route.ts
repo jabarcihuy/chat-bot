@@ -12,8 +12,14 @@ export async function PUT(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  let body;
   try {
-    const body = await req.json();
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Format request body JSON tidak valid" }, { status: 400 });
+  }
+
+  try {
     const { title, messages, prdDocument } = body;
 
     // Check if chat exists and belongs to user
@@ -25,7 +31,7 @@ export async function PUT(
       return NextResponse.json({ error: "Not found or Unauthorized" }, { status: 404 });
     }
 
-    const updateData: any = {};
+    const updateData: { title?: string; prdDocument?: string; updatedAt?: Date } = {};
     if (title !== undefined) {
       updateData.title = title;
     }
@@ -34,18 +40,31 @@ export async function PUT(
     }
 
     if (messages !== undefined) {
-      // Recreate messages using a transaction
-      await prisma.$transaction([
-        prisma.message.deleteMany({ where: { chatId: id } }),
-        prisma.message.createMany({
-          data: messages.map((m: any) => ({
+      const messageIds = messages.map((m: { id: string }) => m.id);
+      const upsertOperations = messages.map((m: { id: string; role: string; content: string; createdAt?: string | Date }) => {
+        return prisma.message.upsert({
+          where: { id: m.id },
+          create: {
             id: m.id,
             chatId: id,
             role: m.role,
             content: m.content,
             createdAt: m.createdAt ? new Date(m.createdAt) : new Date(),
-          }))
+          },
+          update: {
+            content: m.content,
+          }
+        });
+      });
+
+      await prisma.$transaction([
+        prisma.message.deleteMany({
+          where: {
+            chatId: id,
+            id: { notIn: messageIds }
+          }
         }),
+        ...upsertOperations,
         prisma.chat.update({
           where: { id },
           data: { ...updateData, updatedAt: new Date() }
@@ -59,7 +78,7 @@ export async function PUT(
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating chat:", error);
     return NextResponse.json({ error: "Failed to update chat" }, { status: 500 });
   }
@@ -90,7 +109,7 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error deleting chat:", error);
     return NextResponse.json({ error: "Failed to delete chat" }, { status: 500 });
   }

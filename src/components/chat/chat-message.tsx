@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles, User, Download, Copy, Check, FilePlus2 } from "lucide-react";
+import { Download, Copy, Check, FilePlus2 } from "lucide-react";
 import { MarkdownRenderer } from "./markdown-renderer";
 import { cn } from "@/lib/utils";
 import { useSettingsStore } from "@/store/settings-store";

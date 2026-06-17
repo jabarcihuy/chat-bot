@@ -10,6 +10,10 @@ import {
     Check,
     X,
     Search,
+    Settings,
+    LogOut,
+    Sun,
+    Moon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,8 +24,12 @@ import { useChatStore, groupChatsByDate } from "@/store/chat-store";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import type { DateGroup } from "@/types";
+import { useTheme } from "next-themes";
+import { signOut, useSession } from "next-auth/react";
 
-function SidebarContent() {
+function SidebarContent({ onOpenSettings }: { onOpenSettings?: () => void }) {
+    const { theme, setTheme } = useTheme();
+    const { data: session } = useSession();
     const {
         chats,
         activeChatId,
@@ -205,8 +213,8 @@ function SidebarContent() {
                                                             {chat.title}
                                                         </span>
                                                         
-                                                        {/* Absolute positioned action buttons */}
-                                                        <div className="absolute right-2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-l from-sidebar via-sidebar to-transparent pl-4 py-1 z-10">
+                                                        {/* Absolute positioned action buttons (always visible on mobile, hover only on desktop) */}
+                                                        <div className="absolute right-2 flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity bg-gradient-to-l from-sidebar via-sidebar to-transparent pl-4 py-1 z-10">
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
@@ -246,6 +254,63 @@ function SidebarContent() {
             {/* Bottom Info Section */}
             <div className="p-4 mt-auto border-t border-border/5 bg-background/20 backdrop-blur-sm">
                 <div className="flex flex-col gap-3">
+                    {/* User Profile Widget */}
+                    {session?.user && (
+                        <div className="flex items-center gap-2.5 p-2 rounded-xl bg-secondary/10 border border-border/5">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary text-xs font-bold border border-primary/20">
+                                {session.user.image ? (
+                                    /* eslint-disable-next-line @next/next/no-img-element */
+                                    <img 
+                                        src={session.user.image} 
+                                        alt={session.user.name || "User"} 
+                                        className="h-full w-full rounded-lg object-cover"
+                                    />
+                                ) : (
+                                    (session.user.name || session.user.email || "?").substring(0, 2).toUpperCase()
+                                )}
+                            </div>
+                            <div className="flex flex-col min-w-0 flex-1">
+                                <span className="text-[11px] font-semibold truncate text-foreground/90">
+                                    {session.user.name || "Pengguna"}
+                                </span>
+                                <span className="text-[9px] text-muted-foreground/80 truncate">
+                                    {session.user.email}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Mobile-only control buttons */}
+                    <div className="flex md:hidden items-center justify-between gap-2 border-b border-border/5 pb-3">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-1.5 text-[11px] flex-1 text-muted-foreground justify-center rounded-xl hover:bg-secondary/40"
+                            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                        >
+                            {theme === "dark" ? <Sun className="h-3.5 w-3.5 text-amber-500 animate-in spin-in-12" /> : <Moon className="h-3.5 w-3.5 text-primary" />}
+                            <span>Tema</span>
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-1.5 text-[11px] flex-1 text-muted-foreground justify-center rounded-xl hover:bg-secondary/40"
+                            onClick={onOpenSettings}
+                        >
+                            <Settings className="h-3.5 w-3.5" />
+                            <span>Setelan</span>
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-1.5 text-[11px] flex-1 text-destructive hover:bg-destructive/10 justify-center rounded-xl"
+                            onClick={() => signOut({ callbackUrl: "/login" })}
+                        >
+                            <LogOut className="h-3.5 w-3.5 text-destructive/80" />
+                            <span>Keluar</span>
+                        </Button>
+                    </div>
+
                     <div className="flex items-center justify-between text-[10px] text-muted-foreground/60 font-medium">
                         <div className="flex items-center gap-2">
                             <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border/10 text-[9px]">Ctrl</kbd>
@@ -264,7 +329,7 @@ function SidebarContent() {
     );
 }
 
-export function Sidebar() {
+export function Sidebar({ onOpenSettings }: { onOpenSettings?: () => void }) {
     const { sidebarOpen, setSidebarOpen } = useChatStore();
     const isDesktop = useMediaQuery("(min-width: 768px)");
 
@@ -273,7 +338,7 @@ export function Sidebar() {
             {/* Desktop sidebar — permanent fixed column */}
             {isDesktop && (
                 <aside className="h-full w-[360px] flex-shrink-0 overflow-hidden glass-strong border-r border-border/10 bg-sidebar/40 backdrop-blur-xl">
-                    <SidebarContent />
+                    <SidebarContent onOpenSettings={onOpenSettings} />
                 </aside>
             )}
 
@@ -283,7 +348,7 @@ export function Sidebar() {
                     <SheetContent side="left" className="w-[340px] p-0 glass-strong border-r-0" showCloseButton={false}>
                         <SheetTitle className="sr-only">Navigasi Obrolan</SheetTitle>
                         <SheetDescription className="sr-only">Daftar riwayat obrolan Anda</SheetDescription>
-                        <SidebarContent />
+                        <SidebarContent onOpenSettings={onOpenSettings} />
                     </SheetContent>
                 </Sheet>
             )}

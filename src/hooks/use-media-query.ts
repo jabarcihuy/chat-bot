@@ -4,15 +4,16 @@ import { useSyncExternalStore } from "react";
 
 export function useMediaQuery(query: string): boolean {
     const subscribe = (callback: () => void) => {
-        if (typeof window === "undefined") return () => {};
         const mql = window.matchMedia(query);
         mql.addEventListener("change", callback);
         return () => mql.removeEventListener("change", callback);
     };
 
     const getSnapshot = () => {
-        if (typeof window === "undefined") return false;
-        return window.matchMedia(query).matches;
+        if (typeof window !== "undefined") {
+            return window.matchMedia(query).matches;
+        }
+        return false;
     };
 
     const getServerSnapshot = () => {
@@ -21,3 +22,5 @@ export function useMediaQuery(query: string): boolean {
 
     return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
+
+

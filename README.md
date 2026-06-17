@@ -9,6 +9,9 @@ Nexus AI adalah chatbot cerdas yang dirancang khusus untuk Vibe Coder. Platform 
 - **Indonesian First**: Antarmuka dan instruksi sistem sepenuhnya dalam Bahasa Indonesia.
 - **Retro Pop UI**: Tampilan modern, berkarakter, dan responsif di semua browser.
 - **Clean Export**: Unduh hasil kerja langsung ke format .md murni tanpa basa-basi chat.
+- **Secure Authentication**: Sistem pendaftaran & masuk aman menggunakan NextAuth.js v5 (Google, GitHub, dan Kredensial Email/Password).
+- **Persistent Chat History**: Sesi obrolan dan dokumen PRD Anda otomatis tersimpan di database MySQL/MariaDB menggunakan Prisma ORM.
+- **Internal API Rate Limiting**: Batasan aman (*Rate Limiting*) menggunakan *token bucket in-memory* pada API chat, judul, dan registrasi guna mencegah spam token LLM.
 
 ## Penjelasan Fitur PRD
 
@@ -37,28 +40,45 @@ graph TD
     J -->|Eksekusi| K[Project / Aplikasi Jadi]
 ```
 
-## Cara Menggunakan
+## Cara Menggunakan (Developer Setup)
 
-### 1. Persiapan
-Clone repositori ini dan instal dependensinya:
+### 1. Persiapan & Instalasi
+Clone repositori ini, masuk ke direktori proyek, dan instal dependensi npm:
 ```bash
 git clone https://github.com/username/chat-bot.git
 cd chat-bot
 npm install
 ```
 
-### 2. Konfigurasi API
-Buat file .env.local di root folder dan masukkan API Key Google AI Studio Anda:
-```env
-GOOGLE_GENERATIVE_AI_API_KEY=AIzaSy...
+### 2. Konfigurasi Environment Variables
+Salin file `.env.example` menjadi `.env` di root folder proyek:
+```bash
+cp .env.example .env
+```
+Buka file `.env` dan isi variabel berikut:
+*   `DATABASE_URL`: URI koneksi database MySQL/MariaDB Anda (contoh: `mysql://root:password@127.0.0.1:3306/prd_chat`).
+*   `AUTH_SECRET`: Secret key acak untuk enkripsi sesi login NextAuth (buat via command: `npx auth secret` atau `openssl rand -base64 33`).
+*   `GOOGLE_GENERATIVE_AI_API_KEY`: API key dari Google AI Studio untuk akses model LLM Gemini.
+*   *(Opsional)* ID & Secret untuk OAuth Client jika ingin mengaktifkan opsi login media sosial (GitHub/Google).
+
+### 3. Sinkronisasi Database & Migrasi Prisma
+Jalankan perintah migrasi Prisma berikut untuk menyelaraskan skema database MySQL/MariaDB lokal Anda:
+```bash
+# Untuk sinkronisasi skema awal ke database kosong Anda
+npx prisma migrate dev
+
+# Generate client Prisma secara manual jika diperlukan
+npx prisma generate
 ```
 
-### 3. Jalankan Aplikasi
+### 4. Menjalankan Server Development
+Setelah database tersinkronisasi dan environment variables dikonfigurasi, jalankan aplikasi di server lokal Anda:
 ```bash
 npm run dev
 ```
+Buka browser Anda di alamat `http://localhost:3000`.
 
-### 4. Mulai Membangun
+### 5. Mulai Membangun
 1. Beralih ke Mode PRD melalui toggle di Header.
 2. Pilih target fokus (misal: Struktur PRD).
 3. Ketik ide Anda (misal: "Aplikasi pengelola stok gudang sepatu").
@@ -69,7 +89,9 @@ npm run dev
 Gunakan file .md hasil download dari Nexus AI sebagai Konteks Utama saat memulai chat dengan AI Coding Agent Anda. Ini akan mencegah AI Agent berhalusinasi dan memastikan struktur kode sesuai dengan visi Anda.
 
 ## Teknologi
-- Framework: Next.js 15+ (App Router)
+- Framework: Next.js 16 (App Router)
+- Database/ORM: Prisma ORM (v7) dengan Driver Adapter MariaDB/MySQL
+- Autentikasi: NextAuth.js v5 (Auth.js) dengan proteksi Next.js Proxy/Middleware
 - AI SDK: Vercel AI SDK (Google Generative AI)
 - Styling: Tailwind CSS 4 & Shadcn/UI
 - State Management: Zustand (Persisted)
