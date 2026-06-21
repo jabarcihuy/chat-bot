@@ -73,7 +73,7 @@ export async function POST(req: Request) {
         const modelId = MODEL_MAPPING[model] || model || "gemini-flash-latest";
         const aiModel = google(modelId);
 
-        let effectiveSystemPrompt = systemPrompt || "Anda adalah asisten yang membantu.";
+                let effectiveSystemPrompt = systemPrompt || "Anda adalah asisten yang membantu.";
         
         // Inject Vibe Coder PRD Persona based on TASK
         if (mode === "prd") {
@@ -100,7 +100,32 @@ export async function POST(req: Request) {
             2. Output HARUS berupa Markdown murni.
             3. Langsung mulai dengan Heading (misal: # Judul Proyek).
             4. Gunakan Bahasa Indonesia yang profesional.`;
+        } else if (mode === "coder") {
+            effectiveSystemPrompt = `Anda adalah Principal AI Coding Assistant Senior. Tugas Anda membantu menulis kode pemrograman yang bersih, aman, efisien, dan berkinerja tinggi. Terapkan prinsip SOLID dan clean code.
+            
+            ATURAN PENTING:
+            1. Selalu berikan penjelasan singkat dan fokus langsung pada solusi kode.
+            2. Gunakan markdown block code untuk semua cuplikan kode.
+            3. Gunakan Bahasa Indonesia yang profesional.`;
+        } else if (mode === "debugger") {
+            effectiveSystemPrompt = `Anda adalah Lead Debugging Assistant. Tugas Anda menganalisis kesalahan kompilasi, runtime, stack trace, atau perilaku tidak terduga pada kode program.
+            
+            ATURAN PENTING:
+            1. Diagnosis masalah secara mendalam (Root Cause Analysis).
+            2. Tunjukkan baris kode yang bermasalah dan berikan perbaikannya secara jelas.
+            3. Berikan saran pencegahan agar bug tidak terulang.
+            4. Gunakan Bahasa Indonesia yang ramah dan profesional.`;
+        } else if (mode === "architect") {
+            effectiveSystemPrompt = `Anda adalah Principal Software Systems Architect. Tugas Anda adalah merancang arsitektur sistem perangkat lunak, struktur database, pola modularitas, skalabilitas, dan integrasi pihak ketiga.
+            
+            ATURAN PENTING:
+            1. Fokus pada efisiensi, keandalan, dan skalabilitas.
+            2. Gunakan diagram (misalnya ASCII atau penjelasan terstruktur) untuk visualisasi relasi antar-komponen jika diperlukan.
+            3. Gunakan Bahasa Indonesia yang profesional.`;
+        }
 
+        // Shared custom instructions & document context across all developer modes
+        if (mode !== "chat") {
             if (customPersonaInstruction && customPersonaInstruction.trim()) {
                 effectiveSystemPrompt += `
                 
@@ -111,8 +136,8 @@ export async function POST(req: Request) {
             if (prdDocument && prdDocument.trim()) {
                 effectiveSystemPrompt += `
                 
-                DOKUMEN PRD SAAT INI (Konteks Penting):
-                AI harus membaca dokumen PRD saat ini di bawah untuk memastikan output tugas baru ("${taskName}") selaras dengan apa yang sudah tertulis di dokumen utama.
+                DOKUMEN/KODE DI KANVAS SAAT INI (Konteks Penting):
+                AI harus membaca isi kanvas saat ini di bawah untuk memastikan output selaras dengan apa yang sudah tertulis di dokumen utama.
                 
                 \`\`\`markdown
                 ${prdDocument}

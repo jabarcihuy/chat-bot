@@ -48,8 +48,8 @@ export function MobileWorkspace({
         <div className="flex md:hidden flex-col flex-1 min-w-0 bg-transparent h-full overflow-hidden">
             <Header onOpenSettings={onOpenSettings} />
 
-            {/* Mobile Tab Switcher (Visible only in PRD mode) */}
-            {mode === "prd" && (
+            {/* Mobile Tab Switcher (Visible in split-pane modes) */}
+            {mode !== "chat" && (
                 <div className="flex bg-muted/20 p-2 border-b border-border/10 justify-center gap-2 shrink-0">
                     <Button
                         variant={activeMobileTab === "chat" ? "default" : "ghost"}
@@ -71,7 +71,7 @@ export function MobileWorkspace({
                         )}
                         onClick={() => setActiveMobileTab("canvas")}
                     >
-                        Kanvas PRD
+                        {mode === "prd" ? "Kanvas PRD" : mode === "coder" ? "Kanvas Kode" : mode === "debugger" ? "Diagnosis" : "Arsitektur"}
                     </Button>
                 </div>
             )}
@@ -79,8 +79,8 @@ export function MobileWorkspace({
             <div className="flex-1 min-h-0 relative overflow-hidden flex flex-col">
                 {/* Chat Tab View */}
                 <div className={cn(
-                    "flex-col h-full min-w-0 flex-1",
-                    mode === "prd" && activeMobileTab !== "chat" ? "hidden" : "flex"
+                    "flex-col h-full min-w-0 flex-1 relative",
+                    mode !== "chat" && activeMobileTab !== "chat" ? "hidden" : "flex"
                 )}>
                     <main className="flex-1 flex flex-col overflow-hidden relative">
                         <ChatArea
@@ -99,8 +99,8 @@ export function MobileWorkspace({
                     />
                 </div>
 
-                {/* PRD Canvas Tab View */}
-                {mode === "prd" && activeMobileTab === "canvas" && (
+                {/* Canvas Tab View */}
+                {mode !== "chat" && activeMobileTab === "canvas" && (
                     <div className="h-full flex flex-col min-w-0 flex-1">
                         <PrdCanvas />
                     </div>

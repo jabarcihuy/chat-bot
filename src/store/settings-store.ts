@@ -8,14 +8,14 @@ interface SettingsState {
     model: string;
     temperature: number;
     systemPrompt: string;
-    mode: "chat" | "prd";
+    mode: "chat" | "prd" | "coder" | "debugger" | "architect";
     prdTask: PRDTask;
     customPersonaInstruction: string;
 
     setModel: (model: string) => void;
     setTemperature: (temp: number) => void;
     setSystemPrompt: (prompt: string) => void;
-    setMode: (mode: "chat" | "prd") => void;
+    setMode: (mode: "chat" | "prd" | "coder" | "debugger" | "architect") => void;
     setPrdTask: (task: PRDTask) => void;
     setCustomPersonaInstruction: (instruction: string) => void;
 }

@@ -1,13 +1,20 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { PanelLeftClose, PanelLeft, Settings, Sparkles, Sun, Moon, Rocket, MessageSquare, LogOut, Trash2 } from "lucide-react";
+import { PanelLeftClose, PanelLeft, Settings, Sparkles, Sun, Moon, Rocket, MessageSquare, LogOut, Trash2, Code, Bug, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useChatStore } from "@/store/chat-store";
 import { useSettingsStore } from "@/store/settings-store";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { signOut } from "next-auth/react";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 interface HeaderProps {
     onOpenSettings: () => void;
@@ -64,36 +71,45 @@ export function Header({ onOpenSettings }: HeaderProps) {
             </div>
 
             <div className="flex items-center gap-2">
-                {/* Mode Toggle Button */}
-                <div className="flex items-center bg-muted/40 p-1 rounded-full border border-border/10 backdrop-blur-md">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className={cn(
-                            "h-7 px-3 rounded-full text-[10px] font-bold gap-1.5 transition-all duration-200",
-                            mode === "chat" 
-                                ? "bg-primary text-primary-foreground shadow-md" 
-                                : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-                        )}
-                        onClick={() => setMode("chat")}
-                    >
-                        <MessageSquare className="h-3 w-3" />
-                        Obrolan
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className={cn(
-                            "h-7 px-3 rounded-full text-[10px] font-bold gap-1.5 transition-all duration-200",
-                            mode === "prd" 
-                                ? "bg-accent text-accent-foreground shadow-md" 
-                                : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-                        )}
-                        onClick={() => setMode("prd")}
-                    >
-                        <Rocket className="h-3 w-3" />
-                        PRD
-                    </Button>
+                {/* Mode Selector Dropdown */}
+                <div className="flex items-center">
+                    <Select value={mode} onValueChange={(val) => setMode(val as "chat" | "prd" | "coder" | "debugger" | "architect")}>
+                        <SelectTrigger className="h-8 rounded-xl text-[10px] font-bold bg-muted/40 border border-border/10 px-3 gap-1.5 focus:ring-1 focus:ring-primary backdrop-blur-md">
+                            <SelectValue placeholder="Pilih Alat Bantu" />
+                        </SelectTrigger>
+                        <SelectContent className="glass border-border/50 text-[10px] font-bold rounded-xl">
+                            <SelectItem value="chat" className="gap-2 focus:bg-primary/10 rounded-lg">
+                                <span className="flex items-center gap-1.5">
+                                    <MessageSquare className="h-3.5 w-3.5 text-primary" />
+                                    Developer Chat
+                                </span>
+                            </SelectItem>
+                            <SelectItem value="coder" className="gap-2 focus:bg-primary/10 rounded-lg">
+                                <span className="flex items-center gap-1.5">
+                                    <Code className="h-3.5 w-3.5 text-emerald-400" />
+                                    AI Coding Assistant
+                                </span>
+                            </SelectItem>
+                            <SelectItem value="prd" className="gap-2 focus:bg-primary/10 rounded-lg">
+                                <span className="flex items-center gap-1.5">
+                                    <Rocket className="h-3.5 w-3.5 text-accent" />
+                                    Documentation Gen
+                                </span>
+                            </SelectItem>
+                            <SelectItem value="debugger" className="gap-2 focus:bg-primary/10 rounded-lg">
+                                <span className="flex items-center gap-1.5">
+                                    <Bug className="h-3.5 w-3.5 text-rose-400" />
+                                    Debug Assistant
+                                </span>
+                            </SelectItem>
+                            <SelectItem value="architect" className="gap-2 focus:bg-primary/10 rounded-lg">
+                                <span className="flex items-center gap-1.5">
+                                    <Layers className="h-3.5 w-3.5 text-amber-400" />
+                                    Architecture Planner
+                                </span>
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 {activeChatId && (
@@ -113,9 +129,19 @@ export function Header({ onOpenSettings }: HeaderProps) {
                 <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/10 backdrop-blur-md text-[10px] font-bold text-muted-foreground border border-border/10">
                     <div className={cn(
                         "w-1.5 h-1.5 rounded-full animate-pulse",
-                        mode === "prd" ? "bg-accent shadow-[0_0_8px_oklch(var(--accent))]" : "bg-primary shadow-[0_0_8px_oklch(var(--primary))]"
+                        mode === "prd" ? "bg-accent shadow-[0_0_8px_oklch(var(--accent))]" :
+                        mode === "coder" ? "bg-emerald-400 shadow-[0_0_8px_oklch(0.7_0.18_140)]" :
+                        mode === "debugger" ? "bg-rose-400 shadow-[0_0_8px_oklch(0.7_0.2_25)]" :
+                        mode === "architect" ? "bg-amber-400 shadow-[0_0_8px_oklch(0.8_0.15_80)]" :
+                        "bg-primary shadow-[0_0_8px_oklch(var(--primary))]"
                     )} />
-                    <span className="uppercase tracking-wider">{mode === "prd" ? "Mode PRD" : "Obrolan"}</span>
+                    <span className="uppercase tracking-wider">
+                        {mode === "prd" ? "Mode PRD" :
+                         mode === "coder" ? "Coding Assistant" :
+                         mode === "debugger" ? "Debug Assistant" :
+                         mode === "architect" ? "Architecture" :
+                         "Obrolan"}
+                    </span>
                     <span className="opacity-20">|</span>
                     <span className="font-mono opacity-80">{model}</span>
                 </div>

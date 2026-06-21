@@ -88,7 +88,7 @@ export function ChatArea({ messages, isLoading, onSuggestionClick }: ChatAreaPro
     return (
         <div ref={containerRef} className="flex-1 overflow-hidden min-h-0 relative">
             <ScrollArea className="h-full w-full">
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-4">
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-10 pb-28 sm:pb-32 space-y-4">
                     {messages.length === 0 && !isLoading && (
                         <WelcomeScreen onSuggestionClick={onSuggestionClick} mode={mode} />
                     )}
@@ -129,7 +129,7 @@ export function ChatArea({ messages, isLoading, onSuggestionClick }: ChatAreaPro
             <AnimatePresence>
                 {showScrollButton && (
                     <motion.div
-                        className="absolute bottom-5 right-5 z-20"
+                        className="absolute bottom-24 sm:bottom-28 right-5 z-20"
                         initial={{ opacity: 0, scale: 0.8, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.8, y: 10 }}
@@ -153,17 +153,42 @@ export function ChatArea({ messages, isLoading, onSuggestionClick }: ChatAreaPro
 
 interface WelcomeScreenProps {
     onSuggestionClick?: (text: string) => void;
-    mode?: "chat" | "prd";
+    mode?: "chat" | "prd" | "coder" | "debugger" | "architect";
 }
 
 function WelcomeScreen({ onSuggestionClick, mode }: WelcomeScreenProps) {
     const { prdTask, setPrdTask } = useSettingsStore();
 
-    const suggestions = [
+    let suggestions = [
         { text: "Jelaskan tentang Quantum Computing" },
         { text: "Tulis komponen React untuk login" },
         { text: "Debug kode Python saya" },
     ];
+
+    let welcomeDesc = "Asisten cerdas Anda yang ditenagai oleh model AI terbaru. Mulai percakapan di bawah atau beralih ke salah satu alat bantu di atas.";
+
+    if (mode === "coder") {
+        suggestions = [
+            { text: "Tulis custom React Hook untuk throttling API request" },
+            { text: "Buat REST API sederhana dengan Express.js dan TypeScript" },
+            { text: "Tulis fungsi Javascript untuk melakukan deep merge objek" },
+        ];
+        welcomeDesc = "Asisten Pemrograman AI Principal. Saya di sini untuk membantu Anda menulis kode yang bersih, efisien, aman, dan berkinerja tinggi.";
+    } else if (mode === "debugger") {
+        suggestions = [
+            { text: "Mengapa muncul error 'PrismaClient is not configured to run in Edge Runtime'?" },
+            { text: "Debug loop tak terbatas di dependency array useEffect ini" },
+            { text: "Perbaiki masalah Memory Leak pada event listener window scroll" },
+        ];
+        welcomeDesc = "Spesialis Debugging AI. Kirimkan kode error atau stack trace Anda untuk mendapatkan analisis akar masalah dan solusi perbaikan.";
+    } else if (mode === "architect") {
+        suggestions = [
+            { text: "Rancang skema database PostgreSQL untuk sistem e-commerce multi-tenant" },
+            { text: "Buat arsitektur microservices untuk aplikasi streaming video" },
+            { text: "Rancang mekanisme otentikasi stateless menggunakan JWT dan Refresh Token" },
+        ];
+        welcomeDesc = "Arsitek Sistem AI. Saya akan membantu Anda mendesain arsitektur aplikasi, relasi database, skema API, dan merancang skalabilitas.";
+    }
 
     if (mode === "prd") {
         const prdGuide = [
@@ -299,8 +324,7 @@ function WelcomeScreen({ onSuggestionClick, mode }: WelcomeScreenProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25 }}
             >
-                Asisten cerdas Anda yang ditenagai oleh model AI terbaru. Mulai percakapan 
-                di bawah atau beralih ke mode PRD untuk menyusun dokumen produk.
+                {welcomeDesc}
             </motion.p>
 
             <div className="grid gap-3 sm:grid-cols-3 max-w-lg w-full">

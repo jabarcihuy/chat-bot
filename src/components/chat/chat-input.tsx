@@ -107,12 +107,12 @@ export function ChatInput({
 
     return (
         <motion.div
-            className="border-t border-border/10 bg-background p-4 sm:p-8"
+            className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-background via-background/90 to-transparent p-4 sm:p-6 pb-6 sm:pb-8 border-t-0 pointer-events-none"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.2 }}
         >
-            <div className="max-w-5xl mx-auto">
+            <div className="max-w-5xl mx-auto pointer-events-auto w-full">
                 <AnimatePresence mode="wait">
                     {mode === "prd" && (
                         <motion.div 
@@ -142,7 +142,13 @@ export function ChatInput({
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder={mode === "prd" ? `Tulis ide untuk ${prdTaskInfo[prdTask].label}...` : "Ketik pesan Anda di sini..."}
+                        placeholder={
+                            mode === "prd" ? `Tulis ide untuk ${prdTaskInfo[prdTask].label}...` :
+                            mode === "coder" ? "Tulis kode yang ingin Anda buat..." :
+                            mode === "debugger" ? "Tempel error log atau kode bermasalah di sini..." :
+                            mode === "architect" ? "Tulis spesifikasi arsitektur yang ingin Anda rancang..." :
+                            "Ketik pesan Anda di sini..."
+                        }
                         rows={1}
                         disabled={disabled}
                         className="flex-1 resize-none bg-transparent text-[15px] leading-relaxed px-2 py-1.5 outline-none placeholder:text-muted-foreground/30 disabled:opacity-50 max-h-[250px]"
