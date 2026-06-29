@@ -1,5 +1,6 @@
 import { streamText, convertToModelMessages, type UIMessage } from "ai";
-import { google } from "@ai-sdk/google";
+import { google, createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createOpenAI } from "@ai-sdk/openai";
 import { auth } from "@/auth";
 import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 
@@ -55,23 +56,66 @@ export async function POST(req: Request) {
                 { status: 400 }
             );
         }
-        const { messages, model, temperature, systemPrompt, mode, prdTask, prdDocument, customPersonaInstruction } =
-            body;
+        const { 
+            messages, 
+            model, 
+            temperature, 
+            systemPrompt, 
+            mode, 
+            prdTask, 
+            prdDocument, 
+            customPersonaInstruction,
+            openaiApiKey,
+            deepseekApiKey,
+            googleApiKey
+        } = body;
 
-        // Use server-side Google AI API key
-        const serverApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-        if (!serverApiKey) {
-            return new Response(
-                JSON.stringify({
-                    error: "Kesalahan konfigurasi server: API key Google AI tidak ditemukan. Silakan hubungi administrator."
-                }),
-                { status: 500, headers: { "Content-Type": "application/json" } }
-            );
+        let aiModel;
+
+        if (model.startsWith("gpt-")) {
+            const apiKey = openaiApiKey || process.env.OPENAI_API_KEY;
+            if (!apiKey) {
+                return new Response(
+                    JSON.stringify({
+                        error: "API Key OpenAI tidak ditemukan. Sediakan API Key di menu Pengaturan."
+                    }),
+                    { status: 400, headers: { "Content-Type": "application/json" } }
+                );
+            }
+            const openaiProvider = createOpenAI({ apiKey });
+            aiModel = openaiProvider(model);
+        } else if (model.startsWith("deepseek-")) {
+            const apiKey = deepseekApiKey || process.env.DEEPSEEK_API_KEY;
+            if (!apiKey) {
+                return new Response(
+                    JSON.stringify({
+                        error: "API Key DeepSeek tidak ditemukan. Sediakan API Key di menu Pengaturan."
+                    }),
+                    { status: 400, headers: { "Content-Type": "application/json" } }
+                );
+            }
+            const deepseekProvider = createOpenAI({
+                name: "deepseek",
+                apiKey,
+                baseURL: "https://api.deepseek.com/v1",
+            });
+            aiModel = deepseekProvider("deepseek-chat");
+        } else {
+            // Use user-supplied Google API Key or fallback to server key
+            const apiKey = googleApiKey || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+            if (!apiKey) {
+                return new Response(
+                    JSON.stringify({
+                        error: "API Key Google Gemini tidak ditemukan. Sediakan API Key di menu Pengaturan."
+                    }),
+                    { status: 400, headers: { "Content-Type": "application/json" } }
+                );
+            }
+
+            const googleProvider = createGoogleGenerativeAI({ apiKey });
+            const modelId = MODEL_MAPPING[model] || model || "gemini-flash-latest";
+            aiModel = googleProvider(modelId);
         }
-
-        // Get the effective model ID based on mapping or fallback
-        const modelId = MODEL_MAPPING[model] || model || "gemini-flash-latest";
-        const aiModel = google(modelId);
 
                 let effectiveSystemPrompt = systemPrompt || "Anda adalah asisten yang membantu.";
         

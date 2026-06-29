@@ -20,6 +20,7 @@ interface MobileWorkspaceProps {
     stop: () => void;
     handleSuggestion: (text: string) => void;
     onOpenSettings: () => void;
+    onOpenDashboard: () => void;
 }
 
 export function MobileWorkspace({
@@ -31,6 +32,7 @@ export function MobileWorkspace({
     stop,
     handleSuggestion,
     onOpenSettings,
+    onOpenDashboard,
 }: MobileWorkspaceProps) {
     const { mode } = useSettingsStore();
     const { activeChatId } = useChatStore();
@@ -46,7 +48,7 @@ export function MobileWorkspace({
 
     return (
         <div className="flex md:hidden flex-col flex-1 min-w-0 bg-transparent h-full overflow-hidden">
-            <Header onOpenSettings={onOpenSettings} />
+            <Header onOpenSettings={onOpenSettings} onOpenDashboard={onOpenDashboard} />
 
             {/* Mobile Tab Switcher (Visible in split-pane modes) */}
             {mode !== "chat" && (

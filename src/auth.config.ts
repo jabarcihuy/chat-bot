@@ -4,6 +4,7 @@ import Google from "next-auth/providers/google"
 import Credentials from "next-auth/providers/credentials"
 
 export const authConfig = {
+  trustHost: true,
   providers: [
     GitHub({
         clientId: process.env.AUTH_GITHUB_ID,

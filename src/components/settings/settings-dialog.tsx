@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 import {
     Select,
     SelectContent,
@@ -35,11 +36,21 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
         temperature,
         systemPrompt,
         customPersonaInstruction,
+        openaiApiKey,
+        deepseekApiKey,
+        googleApiKey,
         setModel,
         setTemperature,
         setSystemPrompt,
         setCustomPersonaInstruction,
+        setOpenaiApiKey,
+        setDeepseekApiKey,
+        setGoogleApiKey,
     } = useSettingsStore();
+
+    const isOpenAI = model.startsWith("gpt-");
+    const isDeepSeek = model.startsWith("deepseek-");
+    const isGoogle = model.startsWith("gemini-");
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -97,9 +108,57 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                                 </SelectContent>
                             </Select>
                             <p className="text-[11px] text-muted-foreground">
-                                Ditenagai oleh Google Gemini - Model AI performa tinggi
+                                Pilih provider model yang ingin Anda gunakan.
                             </p>
                         </div>
+
+                        {isGoogle && (
+                            <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                <Label className="text-xs font-semibold text-primary">Google Gemini API Key Pribadi</Label>
+                                <Input
+                                    type="password"
+                                    placeholder="Masukkan Google Gemini API Key..."
+                                    value={googleApiKey}
+                                    onChange={(e) => setGoogleApiKey(e.target.value)}
+                                    className="bg-secondary/30 text-xs h-9"
+                                />
+                                <p className="text-[10px] text-muted-foreground">
+                                    API Key disimpan secara lokal di browser Anda dan hanya dikirimkan ke server untuk memproses obrolan ini.
+                                </p>
+                            </div>
+                        )}
+
+                        {isOpenAI && (
+                            <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                <Label className="text-xs font-semibold text-primary">OpenAI API Key Pribadi</Label>
+                                <Input
+                                    type="password"
+                                    placeholder="sk-..."
+                                    value={openaiApiKey}
+                                    onChange={(e) => setOpenaiApiKey(e.target.value)}
+                                    className="bg-secondary/30 text-xs h-9"
+                                />
+                                <p className="text-[10px] text-muted-foreground">
+                                    API Key disimpan secara lokal di browser Anda dan hanya dikirimkan ke server untuk memproses obrolan ini.
+                                </p>
+                            </div>
+                        )}
+
+                        {isDeepSeek && (
+                            <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                <Label className="text-xs font-semibold text-primary">DeepSeek API Key Pribadi</Label>
+                                <Input
+                                    type="password"
+                                    placeholder="sk-..."
+                                    value={deepseekApiKey}
+                                    onChange={(e) => setDeepseekApiKey(e.target.value)}
+                                    className="bg-secondary/30 text-xs h-9"
+                                />
+                                <p className="text-[10px] text-muted-foreground">
+                                    API Key disimpan secara lokal di browser Anda dan hanya dikirimkan ke server untuk memproses obrolan ini.
+                                </p>
+                            </div>
+                        )}
                     </TabsContent>
 
                     {/* Advanced Tab */}

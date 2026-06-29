@@ -1,5 +1,7 @@
 import { PrismaClient } from "@prisma/client"
 import { PrismaMariaDb } from "@prisma/adapter-mariadb"
+import { PrismaPg } from "@prisma/adapter-pg"
+import pg from "pg"
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -9,6 +11,16 @@ const createPrismaClient = () => {
   const urlString = process.env.DATABASE_URL;
   if (!urlString) {
     throw new Error("DATABASE_URL environment variable is not defined");
+  }
+
+  // Dynamic check: Use pg driver adapter for PostgreSQL (Supabase) in Prisma 7
+  if (urlString.startsWith("postgres://") || urlString.startsWith("postgresql://")) {
+    const pool = new pg.Pool({ connectionString: urlString });
+    const adapter = new PrismaPg(pool);
+    return new PrismaClient({
+      adapter,
+      log: ['query', 'error', 'warn'],
+    });
   }
 
   const dbUrl = new URL(urlString);

@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/sidebar/sidebar";
 import { DesktopWorkspace } from "@/components/layout/desktop-workspace";
 import { MobileWorkspace } from "@/components/layout/mobile-workspace";
 import { SettingsDialog } from "@/components/settings/settings-dialog";
+import { DashboardDialog } from "@/components/settings/dashboard-dialog";
 import { useChatStore } from "@/store/chat-store";
 import { useSettingsStore } from "@/store/settings-store";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
@@ -49,6 +50,7 @@ function toStoredMessages(messages: UIMessage[]) {
 
 export default function ChatPage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [dashboardOpen, setDashboardOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const pendingMessageRef = useRef<{
@@ -64,7 +66,17 @@ export default function ChatPage() {
     setActiveChat,
     setChats,
   } = useChatStore();
-  const { model, temperature, systemPrompt, mode, prdTask, customPersonaInstruction } = useSettingsStore();
+  const { 
+    model, 
+    temperature, 
+    systemPrompt, 
+    mode, 
+    prdTask, 
+    customPersonaInstruction, 
+    openaiApiKey, 
+    deepseekApiKey,
+    googleApiKey
+  } = useSettingsStore();
 
   const activeChat = chats.find((c) => c.id === activeChatId);
   const activePrdDocument = activeChat?.prdDocument || "";
@@ -90,6 +102,9 @@ export default function ChatPage() {
           prdTask,
           prdDocument: activePrdDocument,
           customPersonaInstruction,
+          openaiApiKey,
+          deepseekApiKey,
+          googleApiKey,
         },
       }),
       onError: (error) => {
@@ -281,6 +296,7 @@ export default function ChatPage() {
           stop={stop}
           handleSuggestion={handleSuggestion}
           onOpenSettings={() => setSettingsOpen(true)}
+          onOpenDashboard={() => setDashboardOpen(true)}
         />
 
         {/* Mobile Workspace (visible only on mobile) */}
@@ -293,10 +309,12 @@ export default function ChatPage() {
           stop={stop}
           handleSuggestion={handleSuggestion}
           onOpenSettings={() => setSettingsOpen(true)}
+          onOpenDashboard={() => setDashboardOpen(true)}
         />
       </div>
 
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <DashboardDialog open={dashboardOpen} onOpenChange={setDashboardOpen} />
     </div>
   );
 }

@@ -11,6 +11,9 @@ interface SettingsState {
     mode: "chat" | "prd" | "coder" | "debugger" | "architect";
     prdTask: PRDTask;
     customPersonaInstruction: string;
+    openaiApiKey: string;
+    deepseekApiKey: string;
+    googleApiKey: string;
 
     setModel: (model: string) => void;
     setTemperature: (temp: number) => void;
@@ -18,6 +21,9 @@ interface SettingsState {
     setMode: (mode: "chat" | "prd" | "coder" | "debugger" | "architect") => void;
     setPrdTask: (task: PRDTask) => void;
     setCustomPersonaInstruction: (instruction: string) => void;
+    setOpenaiApiKey: (key: string) => void;
+    setDeepseekApiKey: (key: string) => void;
+    setGoogleApiKey: (key: string) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -29,6 +35,9 @@ export const useSettingsStore = create<SettingsState>()(
             mode: "chat",
             prdTask: "structure",
             customPersonaInstruction: "",
+            openaiApiKey: "",
+            deepseekApiKey: "",
+            googleApiKey: "",
 
             setModel: (model) => set({ model }),
             setTemperature: (temperature) => set({ temperature }),
@@ -36,6 +45,9 @@ export const useSettingsStore = create<SettingsState>()(
             setMode: (mode) => set({ mode }),
             setPrdTask: (prdTask) => set({ prdTask }),
             setCustomPersonaInstruction: (customPersonaInstruction) => set({ customPersonaInstruction }),
+            setOpenaiApiKey: (openaiApiKey) => set({ openaiApiKey }),
+            setDeepseekApiKey: (deepseekApiKey) => set({ deepseekApiKey }),
+            setGoogleApiKey: (googleApiKey) => set({ googleApiKey }),
         }),
         {
             name: "nexus-settings",

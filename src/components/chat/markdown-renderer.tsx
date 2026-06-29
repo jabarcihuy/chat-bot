@@ -3,6 +3,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CodeBlock } from "./code-block";
+import { MermaidRenderer } from "./mermaid-renderer";
 import type { Components } from "react-markdown";
 
 interface MarkdownRendererProps {
@@ -17,6 +18,9 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
 
             // Block code (has language class or is multi-line inside pre)
             if (match) {
+                if (match[1] === "mermaid") {
+                    return <MermaidRenderer code={codeStr} />;
+                }
                 return <CodeBlock language={match[1]} code={codeStr} />;
             }
 

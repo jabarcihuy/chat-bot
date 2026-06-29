@@ -82,32 +82,32 @@
 }
 
 .dark {
-  --background: oklch(0.12 0.02 250); /* Darker navy for better contrast */
-  --foreground: oklch(0.98 0.01 250);
-  --card: oklch(0.16 0.025 250); /* Solid card background */
-  --card-foreground: oklch(0.98 0.01 250);
-  --popover: oklch(0.16 0.025 250);
-  --popover-foreground: oklch(0.98 0.01 250);
-  --primary: oklch(0.7 0.18 200); /* Neon Teal */
-  --primary-foreground: oklch(0.1 0.02 250);
-  --secondary: oklch(0.22 0.04 230); /* Sleek Deep Indigo-Slate */
-  --secondary-foreground: oklch(0.92 0.02 230);
-  --muted: oklch(0.2 0.03 250);
-  --muted-foreground: oklch(0.7 0.02 250); /* Brighter gray for visibility */
-  --accent: oklch(0.7 0.2 25); /* Neon Coral */
-  --accent-foreground: oklch(0.1 0.02 250);
+  --background: oklch(0.10 0.005 240); /* Industrial charcoal (#09090B) */
+  --foreground: oklch(0.98 0.002 240); /* Crisp clean white */
+  --card: oklch(0.14 0.005 240); /* Steel/gunmetal dark gray (#121214) */
+  --card-foreground: oklch(0.98 0.002 240);
+  --popover: oklch(0.14 0.005 240);
+  --popover-foreground: oklch(0.98 0.002 240);
+  --primary: oklch(0.7 0.18 200); /* Neon Teal accent */
+  --primary-foreground: oklch(0.1 0.01 240);
+  --secondary: oklch(0.18 0.005 240); /* Light slate/gunmetal */
+  --secondary-foreground: oklch(0.92 0.002 240);
+  --muted: oklch(0.16 0.005 240);
+  --muted-foreground: oklch(0.65 0.005 240); /* Readable steel gray text */
+  --accent: oklch(0.7 0.2 25); /* Accent highlight */
+  --accent-foreground: oklch(0.1 0.01 240);
   --destructive: oklch(0.6 0.2 25);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.7 0.18 200 / 50%);
-  --sidebar: oklch(0.14 0.025 250);
-  --sidebar-foreground: oklch(0.98 0.01 250);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 8%);
+  --ring: oklch(0.7 0.18 200 / 40%);
+  --sidebar: oklch(0.12 0.005 240); /* Dark neutral sidebar (#0E0E10) */
+  --sidebar-foreground: oklch(0.98 0.002 240);
   --sidebar-primary: oklch(0.7 0.18 200);
-  --sidebar-primary-foreground: oklch(0.1 0.02 250);
-  --sidebar-accent: oklch(0.75 0.12 210 / 15%); /* Ice Blue Hover Glow */
-  --sidebar-accent-foreground: oklch(0.82 0.08 210);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.7 0.18 200 / 50%);
+  --sidebar-primary-foreground: oklch(0.1 0.01 240);
+  --sidebar-accent: oklch(0.18 0.005 240 / 70%); /* Hover background color */
+  --sidebar-accent-foreground: oklch(0.95 0.002 240);
+  --sidebar-border: oklch(1 0 0 / 7%);
+  --sidebar-ring: oklch(0.7 0.18 200 / 40%);
 }
 
 @layer base {

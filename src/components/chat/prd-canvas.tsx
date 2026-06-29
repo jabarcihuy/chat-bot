@@ -1,10 +1,15 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useChatStore } from "@/store/chat-store";
+import { useFileStore } from "@/store/file-store";
+import { useSettingsStore } from "@/store/settings-store";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Editor from "@monaco-editor/react";
+import { cn } from "@/lib/utils";
 import { 
     Edit3, 
     Eye, 
@@ -21,20 +26,70 @@ import {
     ListOrdered,
     Code,
     Quote,
-    Table
+    Table,
+    Save,
+    X,
+    FolderSync,
+    Bug,
+    Layers
 } from "lucide-react";
 import { toast } from "sonner";
 import { MarkdownRenderer } from "./markdown-renderer";
 import { motion } from "framer-motion";
 
+function getLanguageFromExtension(filePath: string): string {
+    const ext = filePath.split(".").pop()?.toLowerCase();
+    switch (ext) {
+        case "js":
+        case "jsx":
+            return "javascript";
+        case "ts":
+        case "tsx":
+            return "typescript";
+        case "html":
+            return "html";
+        case "css":
+            return "css";
+        case "json":
+            return "json";
+        case "md":
+            return "markdown";
+        case "py":
+            return "python";
+        case "go":
+            return "go";
+        case "rs":
+            return "rust";
+        case "sh":
+            return "shell";
+        case "yml":
+        case "yaml":
+            return "yaml";
+        default:
+            return "plaintext";
+    }
+}
+
 export function PrdCanvas() {
     const { activeChatId, chats, updateChatPrdDocument } = useChatStore();
     const activeChat = chats.find((c) => c.id === activeChatId);
     
+    const { mode } = useSettingsStore();
+    const { 
+        activeFilePath, 
+        activeFileContent, 
+        isDirty, 
+        setFileContent, 
+        saveFile, 
+        closeActiveFile,
+        fetchFileTree
+    } = useFileStore();
+
     const [docContent, setDocContent] = useState("");
     const [prevActiveChatId, setPrevActiveChatId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState("edit");
     const [copied, setCopied] = useState(false);
+    const [exportPath, setExportPath] = useState("");
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     // Sync state with active chat during render to avoid cascading effects
@@ -43,18 +98,9 @@ export function PrdCanvas() {
         setDocContent(activeChat ? activeChat.prdDocument || "" : "");
     }
 
-    if (!activeChat) {
-        return (
-            <div className="flex flex-col items-center justify-center w-full h-full bg-card/30 md:border-l border-border/10 p-6 text-center">
-                <FileText className="h-12 w-12 text-muted-foreground/30 mb-3 animate-pulse" />
-                <p className="text-xs text-muted-foreground font-medium">Pilih obrolan untuk membuka Kanvas PRD</p>
-            </div>
-        );
-    }
-
     const handleContentChange = (val: string) => {
         setDocContent(val);
-        updateChatPrdDocument(activeChat.id, val);
+        updateChatPrdDocument(activeChat?.id || "", val);
     };
 
     const insertMarkdown = (syntax: 'bold' | 'italic' | 'h1' | 'h2' | 'bullet' | 'number' | 'code' | 'table' | 'quote') => {
@@ -116,29 +162,58 @@ export function PrdCanvas() {
     };
 
     const handleCopy = () => {
-        navigator.clipboard.writeText(docContent);
+        const contentToCopy = activeFilePath ? (activeFileContent || "") : docContent;
+        navigator.clipboard.writeText(contentToCopy);
         setCopied(true);
-        toast.success("Dokumen PRD berhasil disalin ke clipboard!");
+        toast.success(activeFilePath ? "Kode berhasil disalin!" : "Dokumen PRD berhasil disalin!");
         setTimeout(() => setCopied(false), 2000);
     };
 
     const handleDownload = () => {
-        if (!docContent.trim()) {
-            toast.error("Dokumen masih kosong!");
+        const contentToDownload = activeFilePath ? (activeFileContent || "") : docContent;
+        if (!contentToDownload.trim()) {
+            toast.error("Konten masih kosong!");
             return;
         }
 
-        const fileName = `PRD-${activeChat.title.replace(/\s+/g, "-") || "Dokumen"}`;
-        const blob = new Blob([docContent], { type: "text/markdown" });
+        const fileName = activeFilePath 
+            ? activeFilePath.split("/").pop() || "file"
+            : `PRD-${activeChat?.title.replace(/\s+/g, "-") || "Dokumen"}.md`;
+        
+        const blob = new Blob([contentToDownload], { type: "text/plain" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${fileName}.md`;
+        a.download = fileName;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        toast.success("Dokumen PRD berhasil diunduh sebagai .md!");
+        toast.success("File berhasil diunduh!");
+    };
+
+    const handleLocalSave = async () => {
+        if (!activeFilePath || activeFileContent === null) return;
+        const success = await saveFile(activeFilePath, activeFileContent);
+        if (success) {
+            fetchFileTree();
+        }
+    };
+
+    const handleExportLocal = async () => {
+        if (!exportPath.trim()) {
+            toast.error("Silakan tentukan nama berkas ekspor terlebih dahulu!");
+            return;
+        }
+        if (!docContent.trim()) {
+            toast.error("Konten kosong, tidak ada yang bisa diekspor!");
+            return;
+        }
+        const success = await saveFile(exportPath.trim(), docContent);
+        if (success) {
+            setExportPath("");
+            fetchFileTree();
+        }
     };
 
     const handlePrint = () => {
@@ -148,14 +223,13 @@ export function PrdCanvas() {
             return;
         }
 
-        const escapedTitle = activeChat.title
+        const escapedTitle = (activeChat?.title || "Dokumen")
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
 
-        // Generate a clean HTML page for PDF printing
         printWindow.document.write(`
             <html>
                 <head>
@@ -231,15 +305,14 @@ export function PrdCanvas() {
 
         const contentDiv = printWindow.document.getElementById("content");
         if (contentDiv) {
-            // Escape raw HTML entities to prevent XSS injection
-            const escapedContent = docContent
+            const contentToPrint = activeFilePath ? (activeFileContent || "") : docContent;
+            const escapedContent = contentToPrint
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
 
-            // Simple markdown parser for printing
             let html = escapedContent
                 .replace(/^# (.*$)/gim, '<h1>$1</h1>')
                 .replace(/^## (.*$)/gim, '<h2>$1</h2>')
@@ -251,7 +324,6 @@ export function PrdCanvas() {
                 .replace(/`(.*?)`/g, '<code>$1</code>')
                 .replace(/\n/g, '<br/>');
             
-            // Clean up list rendering tags
             html = html.replace(/<\/ul>\s*<ul>/g, "");
             contentDiv.innerHTML = html;
         }
@@ -266,7 +338,7 @@ export function PrdCanvas() {
     };
 
     const handleAutoGenerateTemplate = () => {
-        const template = `# PRD: ${activeChat.title}
+        const template = `# PRD: ${activeChat?.title || "Proyek Baru"}
 
 ## 1. Pendahuluan & Ringkasan Proyek
 *Tulis ringkasan singkat dari proyek/ide Anda di sini.*
@@ -297,6 +369,98 @@ export function PrdCanvas() {
         toast.success("Template PRD berhasil dimuat!");
     };
 
+    const getWelcomeConfig = () => {
+        switch (mode) {
+            case "coder":
+                return {
+                    title: "Kanvas Kode Kosong",
+                    desc: "Pilih berkas dari explorer di kiri, gunakan template boilerplate, atau minta AI di chat untuk membuatkan kode program baru.",
+                    icon: <Code className="h-10 w-10 animate-pulse text-emerald-400" />,
+                    bg: "bg-emerald-500/10 text-emerald-400",
+                    btnText: "Template Boilerplate",
+                    btnDesc: "Format awal HTML/JS/CSS",
+                    templateContent: `<!DOCTYPE html>
+<html>
+<head>
+    <title>Nexus AI App</title>
+</head>
+<body>
+    <h1>Selamat Datang di Nexus AI Workspace!</h1>
+    <script>
+        console.log("Aplikasi siap dijalankan.");
+    </script>
+</body>
+</html>`
+                };
+            case "debugger":
+                return {
+                    title: "Analisis & Diagnosis Bug",
+                    desc: "Tempel cuplikan kode yang bermasalah atau logs error Anda untuk mulai menganalisis bug secara terstruktur.",
+                    icon: <Bug className="h-10 w-10 animate-pulse text-rose-400" />,
+                    bg: "bg-rose-500/10 text-rose-400",
+                    btnText: "Contoh Kode Bermasalah",
+                    btnDesc: "Uji coba analisis bug",
+                    templateContent: `// Contoh kode yang mengandung bug/error
+function hitungRataRata(arr) {
+    let total = 0;
+    // ERROR: Loop melebihi indeks array, menyebabkan NaN
+    for (let i = 0; i <= arr.length; i++) {
+        total += arr[i];
+    }
+    return total / arr.length;
+}`
+                };
+            case "architect":
+                return {
+                    title: "Perencanaan Arsitektur",
+                    desc: "Rancang skema database, diagram alir data, atau rancangan topologi server di kanvas planner ini.",
+                    icon: <Layers className="h-10 w-10 animate-pulse text-amber-400" />,
+                    bg: "bg-amber-500/10 text-amber-400",
+                    btnText: "Template Mermaid Flow",
+                    btnDesc: "Diagram alir visual",
+                    templateContent: `graph TD
+    A[Pengguna] -->|Permintaan HTTP| B(Load Balancer)
+    B -->|Rute| C[Server Next.js]
+    C -->|Kueri Prisma| D[(Database PostgreSQL)]
+    C -->|Simpan Media| E[Cloudinary CDN]`
+                };
+            default: // prd
+                return {
+                    title: "Kanvas PRD Kosong",
+                    desc: "Pilih opsi di bawah untuk mulai menulis dokumen PRD Anda atau minta AI di panel obrolan sebelah kiri untuk menyusunnya.",
+                    icon: <FileText className="h-10 w-10 animate-pulse text-primary" />,
+                    bg: "bg-primary/10 text-primary",
+                    btnText: "Gunakan Template PRD",
+                    btnDesc: "Format standard terstruktur",
+                    templateContent: `# PRD: Proyek Baru
+
+## 1. Pendahuluan & Ringkasan Proyek
+*Tulis ringkasan singkat dari proyek/ide Anda di sini.*
+
+- **Pernyataan Masalah:** apa masalah yang ingin diselesaikan?
+- **Tujuan Proyek:** apa gol utama dari pembuatan software ini?
+- **Target Pengguna:** siapa saja pengguna aplikasi ini?
+
+## 2. Persyaratan Fungsional (User Stories)
+1. **Autentikasi:** Sebagai pengguna biasa, saya ingin bisa mendaftar akun agar data saya aman.
+2. **Dashboard:** Sebagai pengguna terdaftar, saya ingin melihat ringkasan data saya.`
+                };
+        }
+    };
+
+    if (!activeChat && !activeFilePath) {
+        return (
+            <div className="flex flex-col items-center justify-center w-full h-full bg-card/30 md:border-l border-border/10 p-6 text-center">
+                <FileText className="h-12 w-12 text-muted-foreground/30 mb-3 animate-pulse" />
+                <p className="text-xs text-muted-foreground font-medium">Pilih obrolan atau berkas untuk membuka Kanvas</p>
+            </div>
+        );
+    }
+
+    const useMonaco = activeFilePath !== null || mode === "coder" || mode === "debugger";
+    const monacoLanguage = activeFilePath ? getLanguageFromExtension(activeFilePath) : "markdown";
+    const isEmptyWorkspace = activeFilePath === null && docContent === "";
+
     return (
         <motion.div 
             className="flex flex-col w-full h-full bg-card/20 overflow-hidden relative"
@@ -306,235 +470,327 @@ export function PrdCanvas() {
         >
             {/* Canvas Header */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/10 bg-muted/30">
-                <div className="flex items-center gap-2">
-                    <FileCode className="h-4 w-4 text-accent" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-card-foreground">Kanvas PRD</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/20 font-mono">
-                        {docContent.split(/\s+/).filter(Boolean).length} kata
-                    </span>
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <FileCode className="h-4 w-4 text-accent shrink-0" />
+                    {activeFilePath ? (
+                        <div className="flex items-center gap-2 truncate">
+                            <span className="text-xs font-bold uppercase tracking-wider text-card-foreground">Editor Berkas:</span>
+                            <span className="text-xs font-mono text-primary truncate bg-secondary/50 px-2.5 py-0.5 rounded-md border border-border/10">
+                                {activeFilePath}
+                            </span>
+                            {isDirty && (
+                                <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" title="Ada perubahan belum disimpan" />
+                            )}
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold uppercase tracking-wider text-card-foreground">Kanvas {useMonaco ? "Kode" : "PRD"}</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/20 font-mono">
+                                {docContent.split(/\s+/).filter(Boolean).length} kata
+                            </span>
+                        </div>
+                    )}
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Monaco Save button */}
+                    {activeFilePath && (
+                        <Button
+                            variant="default"
+                            size="sm"
+                            onClick={handleLocalSave}
+                            className="h-8 gap-1.5 text-xs rounded-lg font-bold shadow-md shadow-primary/10 bg-emerald-600 hover:bg-emerald-700"
+                        >
+                            <Save className="h-3.5 w-3.5" />
+                            Simpan
+                        </Button>
+                    )}
+
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={handleCopy}
                         className="h-8 w-8 rounded-lg"
-                        title="Salin Dokumen"
+                        title="Salin Isi"
                     >
                         {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
                     </Button>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={handlePrint}
-                        className="h-8 w-8 rounded-lg"
-                        title="Cetak / PDF"
-                    >
-                        <Printer className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                        variant="default"
-                        size="sm"
-                        onClick={handleDownload}
-                        className="h-8 gap-1.5 text-xs rounded-lg font-bold shadow-md shadow-primary/10"
-                    >
-                        <Download className="h-3.5 w-3.5" />
-                        Ekspor .md
-                    </Button>
-                </div>
-            </div>
-
-            {/* Editor & Preview Tabs */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-                <div className="flex items-center justify-between px-5 py-2 border-b border-border/10 bg-background/50">
-                    <TabsList className="bg-muted/50 p-0.5 h-8">
-                        <TabsTrigger value="edit" className="h-7 text-xs gap-1.5 px-3">
-                            <Edit3 className="h-3 w-3" />
-                            Edit
-                        </TabsTrigger>
-                        <TabsTrigger value="preview" className="h-7 text-xs gap-1.5 px-3">
-                            <Eye className="h-3 w-3" />
-                            Pratinjau
-                        </TabsTrigger>
-                    </TabsList>
-
-                    {docContent.length === 0 && (
+                    {!useMonaco && (
                         <Button
                             variant="ghost"
-                            size="sm"
-                            className="h-7 text-[10px] gap-1.5 hover:bg-accent/10 hover:text-accent font-bold"
-                            onClick={handleAutoGenerateTemplate}
+                            size="icon"
+                            onClick={handlePrint}
+                            className="h-8 w-8 rounded-lg"
+                            title="Cetak / PDF"
                         >
-                            <Sparkles className="h-3 w-3" />
-                            Gunakan Template
+                            <Printer className="h-3.5 w-3.5" />
+                        </Button>
+                    )}
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleDownload}
+                        className="h-8 w-8 rounded-lg"
+                        title="Unduh File"
+                    >
+                        <Download className="h-3.5 w-3.5" />
+                    </Button>
+
+                    {/* Monaco File explorer file Close button */}
+                    {activeFilePath && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={closeActiveFile}
+                            className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+                            title="Tutup Berkas"
+                        >
+                            <X className="h-3.5 w-3.5" />
                         </Button>
                     )}
                 </div>
+            </div>
 
-                {/* Edit tab pane */}
-                <TabsContent value="edit" className="flex flex-col flex-1 m-0 p-0 overflow-hidden relative">
-                    {docContent.length === 0 ? (
-                        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-xl mx-auto space-y-6">
-                            <div className="p-4 rounded-3xl bg-primary/10 text-primary">
-                                <FileText className="h-10 w-10 animate-pulse" />
+            {/* Editor Area */}
+            {isEmptyWorkspace ? (
+                (() => {
+                    const welcome = getWelcomeConfig();
+                    return (
+                        <div className="flex-grow flex flex-col items-center justify-center p-8 text-center max-w-xl mx-auto space-y-6">
+                            <div className={cn("p-4 rounded-3xl", welcome.bg)}>
+                                {welcome.icon}
                             </div>
                             <div className="space-y-2">
-                                <h3 className="text-sm font-bold">Kanvas PRD Kosong</h3>
+                                <h3 className="text-sm font-bold text-foreground">{welcome.title}</h3>
                                 <p className="text-[11px] text-muted-foreground leading-relaxed max-w-xs mx-auto">
-                                    Pilih opsi di bawah untuk mulai menulis dokumen PRD Anda atau minta AI di panel obrolan sebelah kiri untuk menyusunnya secara otomatis.
+                                    {welcome.desc}
                                 </p>
                             </div>
                             <div className="grid gap-3 w-full sm:grid-cols-2">
                                 <Button
                                     variant="outline"
-                                    onClick={handleAutoGenerateTemplate}
+                                    onClick={() => handleContentChange(welcome.templateContent)}
                                     className="p-4 h-auto rounded-xl flex flex-col items-center gap-2 border-border/10 hover:border-primary/30 hover:bg-muted/10 bg-transparent transition-all duration-200"
                                 >
                                     <Sparkles className="h-4 w-4 text-primary" />
                                     <div className="text-center">
-                                        <div className="text-[11px] font-bold">Gunakan Template</div>
-                                        <div className="text-[9px] text-muted-foreground">Format standar terstruktur</div>
+                                        <div className="text-[11px] font-bold">{welcome.btnText}</div>
+                                        <div className="text-[9px] text-muted-foreground">{welcome.btnDesc}</div>
                                     </div>
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    onClick={() => handleContentChange("# PRD Baru\n\nMulai ketik di sini...")}
+                                    onClick={() => handleContentChange(
+                                        mode === "coder" || mode === "debugger" 
+                                            ? "// Mulai mengetik kode di sini...\n" 
+                                            : "# Proyek Baru\n\nMulai mengetik di sini...\n"
+                                    )}
                                     className="p-4 h-auto rounded-xl flex flex-col items-center gap-2 border-border/10 hover:border-primary/30 hover:bg-muted/10 bg-transparent transition-all duration-200"
                                 >
                                     <Edit3 className="h-4 w-4 text-accent" />
                                     <div className="text-center">
                                         <div className="text-[11px] font-bold">Mulai Dari Nol</div>
-                                        <div className="text-[9px] text-muted-foreground">Dokumen kosong baru</div>
+                                        <div className="text-[9px] text-muted-foreground">Kanvas kosong baru</div>
                                     </div>
                                 </Button>
                             </div>
                         </div>
-                    ) : (
-                        <>
-                            {/* Markdown Toolbar */}
-                            <div className="flex items-center gap-1 px-4 py-1.5 border-b border-border/10 bg-muted/10 shrink-0 overflow-x-auto no-scrollbar">
+                    );
+                })()
+            ) : useMonaco ? (
+                <div className="flex flex-col flex-1 overflow-hidden">
+                    {/* Local export bar if not editing a real file */}
+                    {!activeFilePath && (
+                        <div className="flex items-center justify-between px-5 py-2 border-b border-border/10 bg-background/50 gap-4">
+                            <span className="text-[10px] font-mono text-muted-foreground">Mode: {mode === "coder" ? "Coder" : "Debugger"} (Monaco)</span>
+                            <div className="flex items-center gap-2 flex-1 max-w-[340px]">
+                                <Input
+                                    value={exportPath}
+                                    onChange={(e) => setExportPath(e.target.value)}
+                                    placeholder="Simpan ke direktori: src/index.js"
+                                    className="h-8 text-xs bg-background border-border/10 rounded-lg px-2 flex-1"
+                                />
                                 <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => insertMarkdown('bold')}
-                                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
-                                    title="Tebal (Bold)"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={handleExportLocal}
+                                    className="h-8 text-xs font-bold gap-1 rounded-lg hover:bg-primary/5 hover:border-primary/10 shrink-0"
                                 >
-                                    <Bold className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => insertMarkdown('italic')}
-                                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
-                                    title="Miring (Italic)"
-                                >
-                                    <Italic className="h-3.5 w-3.5" />
-                                </Button>
-                                <div className="w-[1px] h-4 bg-border/20 mx-1 shrink-0" />
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => insertMarkdown('h1')}
-                                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted font-bold text-[10px] font-mono"
-                                    title="Judul 1"
-                                >
-                                    H1
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => insertMarkdown('h2')}
-                                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted font-bold text-[10px] font-mono"
-                                    title="Judul 2"
-                                >
-                                    H2
-                                </Button>
-                                <div className="w-[1px] h-4 bg-border/20 mx-1 shrink-0" />
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => insertMarkdown('bullet')}
-                                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
-                                    title="Daftar Poin"
-                                >
-                                    <List className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => insertMarkdown('number')}
-                                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
-                                    title="Daftar Angka"
-                                >
-                                    <ListOrdered className="h-3.5 w-3.5" />
-                                </Button>
-                                <div className="w-[1px] h-4 bg-border/20 mx-1 shrink-0" />
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => insertMarkdown('code')}
-                                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
-                                    title="Blok Kode"
-                                >
-                                    <Code className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => insertMarkdown('quote')}
-                                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
-                                    title="Kutipan"
-                                >
-                                    <Quote className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => insertMarkdown('table')}
-                                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
-                                    title="Tabel"
-                                >
-                                    <Table className="h-3.5 w-3.5" />
+                                    <FolderSync className="h-3.5 w-3.5" />
+                                    Ekspor
                                 </Button>
                             </div>
-                            <textarea
-                                ref={textareaRef}
-                                value={docContent}
-                                onChange={(e) => handleContentChange(e.target.value)}
-                                placeholder="Mulai ketik Dokumen PRD Anda di sini dalam format Markdown... atau klik tombol 'Masukkan ke Kanvas' pada obrolan untuk menambahkan konten secara otomatis."
-                                className="w-full h-full p-6 bg-transparent text-sm resize-none focus:outline-none font-mono leading-relaxed border-0 focus:ring-0 selection:bg-primary/20 placeholder:text-muted-foreground/40 overflow-y-auto"
-                            />
-                        </>
-                    )}
-                </TabsContent>
-
-                {/* Preview tab pane */}
-                <TabsContent value="preview" className="flex flex-col flex-1 m-0 p-0 overflow-hidden">
-                    <ScrollArea className="h-full">
-                        <div className="p-8 prose prose-sm dark:prose-invert max-w-none">
-                            {docContent.trim() ? (
-                                <MarkdownRenderer content={docContent} />
-                            ) : (
-                                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground/40">
-                                    <Eye className="h-10 w-10 mb-3" />
-                                    <p className="text-xs">Belum ada konten untuk dipratinjau</p>
-                                </div>
-                            )}
                         </div>
-                    </ScrollArea>
-                </TabsContent>
-            </Tabs>
+                    )}
+
+                    <div className="flex-1 w-full bg-[#1e1e1e]">
+                        <Editor
+                            height="100%"
+                            language={monacoLanguage}
+                            theme="vs-dark"
+                            value={activeFilePath ? (activeFileContent || "") : docContent}
+                            onChange={(val) => {
+                                if (activeFilePath) {
+                                    setFileContent(val || "");
+                                } else {
+                                    handleContentChange(val || "");
+                                }
+                            }}
+                            options={{
+                                minimap: { enabled: false },
+                                fontSize: 13,
+                                fontFamily: "SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace",
+                                automaticLayout: true,
+                                tabSize: 2,
+                                wordWrap: "on",
+                                suggestOnTriggerCharacters: true,
+                                quickSuggestions: true
+                            }}
+                        />
+                    </div>
+                </div>
+            ) : (
+                /* Editor & Preview Tabs for Standard Markdown PRD Canvas */
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+                    <div className="flex items-center justify-between px-5 py-2 border-b border-border/10 bg-background/50">
+                        <TabsList className="bg-muted/50 p-0.5 h-8">
+                            <TabsTrigger value="edit" className="h-7 text-xs gap-1.5 px-3">
+                                <Edit3 className="h-3 w-3" />
+                                Edit
+                            </TabsTrigger>
+                            <TabsTrigger value="preview" className="h-7 text-xs gap-1.5 px-3">
+                                <Eye className="h-3 w-3" />
+                                Pratinjau
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
+
+                    {/* Edit tab pane */}
+                    <TabsContent value="edit" className="flex flex-col flex-1 m-0 p-0 overflow-hidden relative">
+                            <>
+                                {/* Markdown Toolbar */}
+                                <div className="flex items-center gap-1 px-4 py-1.5 border-b border-border/10 bg-muted/10 shrink-0 overflow-x-auto no-scrollbar">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => insertMarkdown('bold')}
+                                        className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                                        title="Tebal (Bold)"
+                                    >
+                                        <Bold className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => insertMarkdown('italic')}
+                                        className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                                        title="Miring (Italic)"
+                                    >
+                                        <Italic className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <div className="w-[1px] h-4 bg-border/20 mx-1 shrink-0" />
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => insertMarkdown('h1')}
+                                        className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted font-bold text-[10px] font-mono"
+                                        title="Judul 1"
+                                    >
+                                        H1
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => insertMarkdown('h2')}
+                                        className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted font-bold text-[10px] font-mono"
+                                        title="Judul 2"
+                                    >
+                                        H2
+                                    </Button>
+                                    <div className="w-[1px] h-4 bg-border/20 mx-1 shrink-0" />
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => insertMarkdown('bullet')}
+                                        className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                                        title="Daftar Poin"
+                                    >
+                                        <List className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => insertMarkdown('number')}
+                                        className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                                        title="Daftar Angka"
+                                    >
+                                        <ListOrdered className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <div className="w-[1px] h-4 bg-border/20 mx-1 shrink-0" />
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => insertMarkdown('code')}
+                                        className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                                        title="Blok Kode"
+                                    >
+                                        <Code className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => insertMarkdown('quote')}
+                                        className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                                        title="Kutipan"
+                                    >
+                                        <Quote className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => insertMarkdown('table')}
+                                        className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                                        title="Tabel"
+                                    >
+                                        <Table className="h-3.5 w-3.5" />
+                                    </Button>
+                                </div>
+                                <textarea
+                                    ref={textareaRef}
+                                    value={docContent}
+                                    onChange={(e) => handleContentChange(e.target.value)}
+                                    placeholder="Mulai ketik Dokumen PRD Anda di sini dalam format Markdown... atau klik tombol 'Masukkan ke Kanvas' pada obrolan untuk menambahkan konten secara otomatis."
+                                    className="w-full h-full p-6 bg-transparent text-sm resize-none focus:outline-none font-mono leading-relaxed border-0 focus:ring-0 selection:bg-primary/20 placeholder:text-muted-foreground/40 overflow-y-auto"
+                                />
+                            </>
+                    </TabsContent>
+
+                    {/* Preview tab pane */}
+                    <TabsContent value="preview" className="flex flex-col flex-1 m-0 p-0 overflow-hidden">
+                        <ScrollArea className="h-full">
+                            <div className="p-8 prose prose-sm dark:prose-invert max-w-none">
+                                {docContent.trim() ? (
+                                    <MarkdownRenderer content={docContent} />
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground/40">
+                                        <Eye className="h-10 w-10 mb-3" />
+                                        <p className="text-xs">Belum ada konten untuk dipratinjau</p>
+                                    </div>
+                                )}
+                            </div>
+                        </ScrollArea>
+                    </TabsContent>
+                </Tabs>
+            )}
 
             {/* Bottom Status bar */}
             <div className="flex items-center justify-between px-5 py-2.5 border-t border-border/10 bg-muted/20 text-[10px] text-muted-foreground font-medium font-mono shrink-0">
                 <div>
-                    Format: <span className="font-bold text-accent">Markdown (.md)</span>
+                    Format: <span className="font-bold text-accent">{useMonaco ? `Code (${monacoLanguage})` : "Markdown (.md)"}</span>
                 </div>
                 <div className="flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                    Tersimpan Otomatis ke Database
+                    {activeFilePath ? (isDirty ? "Ada perubahan belum disimpan" : "Semua perubahan disimpan") : "Tersimpan Otomatis ke Database"}
                 </div>
             </div>
         </motion.div>

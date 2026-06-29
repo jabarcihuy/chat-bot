@@ -181,7 +181,12 @@ const [user, posts, sessions] = await Promise.all([
       {/* Modern SaaS Floating Navbar */}
       <div className="sticky top-0 z-50 w-full px-4 sm:px-6 py-4">
         <header className="max-w-6xl mx-auto rounded-2xl border border-border/10 bg-background/50 backdrop-blur-xl px-6 py-3 flex items-center justify-between shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
-          <div className="flex items-center gap-3">
+          <motion.div 
+            className="flex items-center gap-3 cursor-pointer"
+            whileHover={{ scale: 1.06, rotate: 1 }}
+            whileTap={{ scale: 0.94 }}
+            transition={{ type: "spring", stiffness: 400, damping: 15 }}
+          >
             <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 shadow-[0_0_15px_rgba(var(--primary-rgb),0.05)]">
               <Terminal className="h-4 w-4 text-primary animate-pulse" />
             </div>
@@ -191,7 +196,38 @@ const [user, posts, sessions] = await Promise.all([
             <span className="text-[8px] font-black tracking-widest px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
               BETA
             </span>
-          </div>
+          </motion.div>
+
+          {/* Center Navigation Links */}
+          <nav className="hidden md:flex items-center gap-3 text-xs font-semibold text-muted-foreground/80">
+            <motion.div 
+              whileHover={{ scale: 1.10, y: -2 }} 
+              whileTap={{ scale: 0.92 }}
+              transition={{ type: "spring", stiffness: 450, damping: 14 }}
+            >
+              <a href="#tools" className="px-3.5 py-1.5 rounded-full bg-secondary/20 hover:bg-secondary/40 border border-border/5 hover:text-foreground transition-all duration-200">
+                Fitur Utama
+              </a>
+            </motion.div>
+            <motion.div 
+              whileHover={{ scale: 1.10, y: -2 }} 
+              whileTap={{ scale: 0.92 }}
+              transition={{ type: "spring", stiffness: 450, damping: 14 }}
+            >
+              <a href="#faq" className="px-3.5 py-1.5 rounded-full bg-secondary/20 hover:bg-secondary/40 border border-border/5 hover:text-foreground transition-all duration-200">
+                Pertanyaan (FAQ)
+              </a>
+            </motion.div>
+            <motion.div 
+              whileHover={{ scale: 1.10, y: -2 }} 
+              whileTap={{ scale: 0.92 }}
+              transition={{ type: "spring", stiffness: 450, damping: 14 }}
+            >
+              <a href="mailto:support@nexusai.dev" className="px-3.5 py-1.5 rounded-full bg-secondary/20 hover:bg-secondary/40 border border-border/5 hover:text-foreground transition-all duration-200">
+                Hubungi Kami
+              </a>
+            </motion.div>
+          </nav>
 
           <div className="flex items-center gap-4">
             {mounted && status === "authenticated" ? (
@@ -784,7 +820,7 @@ model Task {
         </section>
 
         {/* 7. FAQ */}
-        <section className="w-full max-w-3xl mx-auto px-6 py-20 sm:py-28 border-t border-border/5 space-y-16">
+        <section id="faq" className="w-full max-w-3xl mx-auto px-6 py-20 sm:py-28 border-t border-border/5 space-y-16">
           <div className="text-center space-y-3">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/10 text-accent text-[9px] font-black uppercase tracking-wider border border-accent/20">
               <HelpCircle className="h-3.5 w-3.5" />

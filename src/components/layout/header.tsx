@@ -1,13 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { PanelLeftClose, PanelLeft, Settings, Sparkles, Sun, Moon, Rocket, MessageSquare, LogOut, Trash2, Code, Bug, Layers } from "lucide-react";
+import { PanelLeftClose, PanelLeft, Settings, Sparkles, Sun, Moon, Rocket, MessageSquare, LogOut, Trash2, Code, Bug, Layers, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useChatStore } from "@/store/chat-store";
 import { useSettingsStore } from "@/store/settings-store";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { signOut } from "next-auth/react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
     Select,
     SelectContent,
@@ -18,17 +20,22 @@ import {
 
 interface HeaderProps {
     onOpenSettings: () => void;
+    onOpenDashboard: () => void;
 }
 
-export function Header({ onOpenSettings }: HeaderProps) {
+export function Header({ onOpenSettings, onOpenDashboard }: HeaderProps) {
     const { sidebarOpen, toggleSidebar, activeChatId, updateChatMessages } = useChatStore();
     const { model, mode, setMode } = useSettingsStore();
     const { theme, setTheme } = useTheme();
+    const [showConfirmClear, setShowConfirmClear] = useState(false);
 
     const handleClearChat = () => {
         if (!activeChatId) return;
-        const confirmClear = window.confirm("Apakah Anda yakin ingin menghapus semua pesan dalam obrolan ini?");
-        if (confirmClear) {
+        setShowConfirmClear(true);
+    };
+
+    const handleConfirmClear = () => {
+        if (activeChatId) {
             updateChatMessages(activeChatId, []);
         }
     };
@@ -113,14 +120,20 @@ export function Header({ onOpenSettings }: HeaderProps) {
                 </div>
 
                 {activeChatId && (
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={handleClearChat}
-                            className="h-8 px-2.5 rounded-full text-[10px] font-bold text-destructive/80 hover:text-destructive hover:bg-destructive/10 border border-destructive/10 transition-all duration-200 gap-1 flex items-center"
+                            className="h-8 px-2.5 rounded-full text-[10px] font-bold text-destructive/80 hover:text-destructive hover:bg-destructive/10 border border-destructive/10 transition-all duration-200 gap-1 flex items-center group"
                         >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <motion.div
+                                whileHover={{ rotate: [0, -10, 10, -10, 10, 0] }}
+                                transition={{ duration: 0.4 }}
+                                className="shrink-0"
+                            >
+                                <Trash2 className="h-3.5 w-3.5" />
+                            </motion.div>
                             <span className="hidden sm:inline">Bersihkan Obrolan</span>
                         </Button>
                     </motion.div>
@@ -154,8 +167,14 @@ export function Header({ onOpenSettings }: HeaderProps) {
                             className="h-8 w-8 sm:h-9 sm:w-9 rounded-full"
                             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                             >
-                            <Sun className="h-3.5 w-3.5 sm:h-4 sm:w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                            <Moon className="absolute h-3.5 w-3.5 sm:h-4 sm:w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                            <motion.div
+                                whileHover={{ rotate: 45, scale: 1.1 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 12 }}
+                                className="relative flex items-center justify-center h-4 w-4"
+                            >
+                                <Sun className="h-3.5 w-3.5 sm:h-4 sm:w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                                <Moon className="absolute h-3.5 w-3.5 sm:h-4 sm:w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                            </motion.div>
                             <span className="sr-only">Ganti tema</span>
                             </Button>
                             </motion.div>
@@ -165,9 +184,33 @@ export function Header({ onOpenSettings }: HeaderProps) {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 sm:h-9 sm:w-9 rounded-full"
-                            onClick={onOpenSettings}
+                            onClick={onOpenDashboard}
+                            title="Dashboard Performa"
                             >
-                            <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            <motion.div
+                                whileHover={{ y: -2, scale: 1.1 }}
+                                transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                            >
+                                <LayoutDashboard className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            </motion.div>
+                            <span className="sr-only">Dashboard</span>
+                            </Button>
+                            </motion.div>
+
+                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 sm:h-9 sm:w-9 rounded-full"
+                            onClick={onOpenSettings}
+                            title="Pengaturan"
+                            >
+                            <motion.div
+                                whileHover={{ rotate: 90 }}
+                                transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                            >
+                                <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            </motion.div>
                             <span className="sr-only">Pengaturan</span>
                             </Button>
                             </motion.div>
@@ -178,12 +221,28 @@ export function Header({ onOpenSettings }: HeaderProps) {
                             className="h-8 w-8 sm:h-9 sm:w-9 rounded-full"
                             onClick={() => signOut({ callbackUrl: "/login" })}
                             >
-                            <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-destructive/80" />
+                            <motion.div
+                                whileHover={{ x: 3 }}
+                                transition={{ type: "spring", stiffness: 350, damping: 12 }}
+                            >
+                                <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-destructive/80" />
+                            </motion.div>
                             <span className="sr-only">Keluar</span>
                             </Button>
                             </motion.div>
                 </div>
             </div>
+
+            <ConfirmDialog
+                open={showConfirmClear}
+                onOpenChange={setShowConfirmClear}
+                title="Hapus Riwayat Pesan?"
+                description="Tindakan ini akan menghapus semua pesan di dalam obrolan aktif saat ini secara permanen. Anda tidak dapat membatalkan tindakan ini."
+                confirmText="Hapus Semua"
+                cancelText="Batal"
+                variant="destructive"
+                onConfirm={handleConfirmClear}
+            />
         </motion.header>
     );
 }

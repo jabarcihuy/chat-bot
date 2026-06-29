@@ -5,6 +5,9 @@ export const MODELS = [
     { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash" },
     { id: "gemini-flash-latest", name: "Gemini 1.5 Flash (Sangat Stabil)" },
     { id: "gemini-pro-latest", name: "Gemini 1.5 Pro" },
+    { id: "gpt-4o", name: "OpenAI GPT-4o" },
+    { id: "gpt-4o-mini", name: "OpenAI GPT-4o Mini" },
+    { id: "deepseek-chat", name: "DeepSeek Coder / Chat" },
 ];
 
 export const DEFAULT_SYSTEM_PROMPT =

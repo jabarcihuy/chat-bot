@@ -13,7 +13,8 @@ import {
     Settings,
     LogOut,
     Sun,
-    Moon
+    Moon,
+    Folder
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,11 +27,16 @@ import { cn } from "@/lib/utils";
 import type { DateGroup } from "@/types";
 import { useTheme } from "next-themes";
 import { signOut, useSession } from "next-auth/react";
+import { FileExplorer } from "./file-explorer";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+
 
 function SidebarContent({ onOpenSettings }: { onOpenSettings?: () => void }) {
     const { theme, setTheme } = useTheme();
     const { data: session } = useSession();
+    const [chatToDelete, setChatToDelete] = useState<{ id: string; title: string } | null>(null);
     const {
+
         chats,
         activeChatId,
         createChat,
@@ -40,6 +46,7 @@ function SidebarContent({ onOpenSettings }: { onOpenSettings?: () => void }) {
         setSidebarOpen,
     } = useChatStore();
 
+    const [sidebarTab, setSidebarTab] = useState<"chats" | "files">("chats");
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
@@ -62,6 +69,7 @@ function SidebarContent({ onOpenSettings }: { onOpenSettings?: () => void }) {
 
     const handleNew = () => {
         createChat();
+        setSidebarTab("chats");
         setSidebarOpen(false);
     };
 
@@ -113,22 +121,56 @@ function SidebarContent({ onOpenSettings }: { onOpenSettings?: () => void }) {
                     </div>
                 </div>
 
-                {/* Search input */}
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
-                    <Input
-                        placeholder="Cari riwayat..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="h-9 pl-9 text-xs bg-background/50 border-border/10 rounded-xl focus:ring-primary/20"
-                    />
+                {/* Tab Switcher */}
+                <div className="flex bg-muted/40 p-0.5 rounded-xl border border-border/5">
+                    <button
+                        onClick={() => setSidebarTab("chats")}
+                        className={cn(
+                            "flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-lg transition-all",
+                            sidebarTab === "chats"
+                                ? "bg-background text-primary shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        <MessageSquare className="h-3.5 w-3.5" />
+                        Obrolan
+                    </button>
+                    <button
+                        onClick={() => setSidebarTab("files")}
+                        className={cn(
+                            "flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-lg transition-all",
+                            sidebarTab === "files"
+                                ? "bg-background text-primary shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        <Folder className="h-3.5 w-3.5" />
+                        Berkas
+                    </button>
                 </div>
+
+                {/* Search input (only for chats) */}
+                {sidebarTab === "chats" && (
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
+                        <Input
+                            placeholder="Cari riwayat..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="h-9 pl-9 text-xs bg-background/50 border-border/10 rounded-xl focus:ring-primary/20"
+                        />
+                    </div>
+                )}
             </div>
 
             <Separator className="opacity-5" />
 
-            {/* Chat list */}
-            <ScrollArea className="flex-1 px-3 py-4">
+            {/* Chat list / File tree */}
+            <div className="flex-1 overflow-hidden">
+                {sidebarTab === "files" ? (
+                    <FileExplorer onFileSelect={!isDesktop ? () => setSidebarOpen(false) : undefined} />
+                ) : (
+                    <ScrollArea className="h-full px-3 py-4">
                 {chats.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-12 text-center opacity-40">
                         <MessageSquare className="h-10 w-10 mb-3" />
@@ -233,7 +275,7 @@ function SidebarContent({ onOpenSettings }: { onOpenSettings?: () => void }) {
                                                                 className="h-6 w-6 text-muted-foreground/40 hover:text-destructive shrink-0"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    deleteChat(chat.id);
+                                                                    setChatToDelete({ id: chat.id, title: chat.title });
                                                                 }}
                                                             >
                                                                 <Trash2 className="h-3 w-3" />
@@ -249,7 +291,9 @@ function SidebarContent({ onOpenSettings }: { onOpenSettings?: () => void }) {
                         </div>
                     );
                 })}
-            </ScrollArea>
+                    </ScrollArea>
+                )}
+            </div>
 
             {/* Bottom Info Section */}
             <div className="p-4 mt-auto border-t border-border/5 bg-background/20 backdrop-blur-sm">
@@ -325,6 +369,24 @@ function SidebarContent({ onOpenSettings }: { onOpenSettings?: () => void }) {
                     </div>
                 </div>
             </div>
+
+            <ConfirmDialog
+                open={chatToDelete !== null}
+                onOpenChange={(open) => {
+                    if (!open) setChatToDelete(null);
+                }}
+                title="Hapus Obrolan?"
+                description={`Apakah Anda yakin ingin menghapus obrolan "${chatToDelete?.title || ""}"? Semua pesan di dalamnya akan terhapus secara permanen.`}
+                confirmText="Hapus"
+                cancelText="Batal"
+                variant="destructive"
+                onConfirm={() => {
+                    if (chatToDelete) {
+                        deleteChat(chatToDelete.id);
+                        setChatToDelete(null);
+                    }
+                }}
+            />
         </div>
     );
 }
